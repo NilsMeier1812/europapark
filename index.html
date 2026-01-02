@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EP Strategie-Planer 4.0</title>
+    <title>EP Strategie-Planer</title>
+    
+    <link rel="icon" href="https://fav.farm/🎢">
+    <link rel="apple-touch-icon" href="https://fav.farm/🎢">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <style>
         :root {
             --bg: #0b0f1a; --card-bg: rgba(30, 41, 59, 0.7);
@@ -17,7 +23,6 @@
         }
         .btn-icon { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; }
         
-        /* Länder-Header */
         .land-section { margin-top: 25px; }
         .land-title { font-size: 0.75em; font-weight: 800; text-transform: uppercase; color: var(--accent); letter-spacing: 1.5px; margin-bottom: 12px; padding-left: 5px; border-left: 3px solid var(--accent); }
 
@@ -33,13 +38,12 @@
         .wait-time { font-size: 2.2em; font-weight: 800; letter-spacing: -1px; }
         .unit { font-size: 0.35em; color: var(--text-dim); margin-left: 2px; }
 
-        /* Badges */
         .badge-row { display: flex; gap: 5px; margin-bottom: 8px; flex-wrap: wrap; }
         .badge { font-size: 0.6em; font-weight: 800; padding: 3px 7px; border-radius: 6px; text-transform: uppercase; }
-        .badge-sr { background: #6366f1; color: white; } /* Single Rider */
-        .badge-deal { background: var(--gold); color: #000; } /* Effizienz-Tipp */
+        .badge-sr { background: #6366f1; color: white; }
+        .badge-deal { background: var(--gold); color: #000; }
         
-        .dist-info { font-size: 0.65em; color: var(--accent); font-weight: bold; margin-top: 5px; display: flex; align-items: center; gap: 3px; }
+        .dist-info { font-size: 0.65em; color: var(--accent); font-weight: bold; margin-top: 8px; display: flex; align-items: center; gap: 4px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; }
 
         #settings-modal { display: none; position: fixed; inset: 0; background: #000; z-index: 200; padding: 25px; overflow-y: auto; }
         .spinning { animation: rotate 0.8s ease-in-out; }
@@ -50,7 +54,7 @@
 
 <header>
     <button class="btn-icon" onclick="openSettings()">⚙️</button>
-    <div style="text-align:center"><div style="font-weight:900; letter-spacing:-1px">STRATEGIE<span>APP</span></div><div id="gps-status" style="font-size:0.5em; color:var(--text-dim)">GPS inaktiv</div></div>
+    <div style="text-align:center"><div style="font-weight:900; letter-spacing:-1px">EP STRATEGIE</div><div id="gps-status" style="font-size:0.5em; color:var(--text-dim)">GPS inaktiv</div></div>
     <button id="refresh-btn" class="btn-icon" onclick="refresh()">
         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
     </button>
@@ -70,7 +74,7 @@
     const QT_ID = "51";
     const PROXY = "https://api.allorigins.win/get?url=";
     
-    // Daten für Single Rider & GPS (Beispiel-Koordinaten)
+    // Koordinaten der Top-Attraktionen für die Distanzberechnung
     const RIDE_PROPS = {
         "WODAN - Timburcoaster": { sr: true, lat: 48.2625, lon: 7.7183, best: 30 },
         "blue fire Megacoaster": { sr: true, lat: 48.2618, lon: 7.7205, best: 25 },
@@ -78,20 +82,22 @@
         "Arthur": { sr: true, lat: 48.2675, lon: 7.7166, best: 30 },
         "Voletarium": { sr: true, lat: 48.2690, lon: 7.7235, best: 20 },
         "Euro-Mir": { sr: true, lat: 48.2655, lon: 7.7210, best: 20 },
-        "Piraten in Batavia": { sr: false, lat: 48.2665, lon: 7.7202, best: 15 }
+        "Piraten in Batavia": { sr: false, lat: 48.2665, lon: 7.7202, best: 15 },
+        "Eurostat CanCan Coaster": { sr: false, lat: 48.2675, lon: 7.7212, best: 25 }
     };
 
-    let parkData = {}; // Nach Ländern gruppiert
+    let parkData = {};
     let userPos = null;
     let selectedIds = JSON.parse(localStorage.getItem('ep_favs')) || [];
 
-    // Standort-Abfrage
     if (navigator.geolocation) {
         navigator.geolocation.watchPosition(pos => {
             userPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-            document.getElementById('gps-status').innerText = "GPS aktiv";
+            document.getElementById('gps-status').innerText = "Standort aktiv";
             render();
-        }, () => {}, { enableHighAccuracy: true });
+        }, (err) => {
+            document.getElementById('gps-status').innerText = "GPS Zugriff verweigert";
+        }, { enableHighAccuracy: true });
     }
 
     async function refresh() {
@@ -107,7 +113,7 @@
             data.lands.forEach(land => {
                 parkData[land.name] = land.rides.map(r => ({
                     ...r, 
-                    props: RIDE_PROPS[r.name] || { sr: false, best: 10 }
+                    props: RIDE_PROPS[r.name] || { sr: false, best: 10, lat: 48.266, lon: 7.721 } // Fallback Mitte Park
                 }));
             });
             render();
@@ -117,13 +123,13 @@
 
     function calculateDistance(lat1, lon1, lat2, lon2) {
         if (!lat1 || !lat2) return null;
-        const R = 6371e3; // Meter
-        const φ1 = lat1 * Math.PI/180;
-        const φ2 = lat2 * Math.PI/180;
-        const Δφ = (lat2-lat1) * Math.PI/180;
-        const Δλ = (lon2-lon1) * Math.PI/180;
-        const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
-        return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+        const R = 6371; // km
+        const dLat = (lat2-lat1) * Math.PI/180;
+        const dLon = (lon2-lon1) * Math.PI/180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const d = R * c;
+        return d; // in km
     }
 
     function render() {
@@ -146,8 +152,14 @@
 
     function renderCard(r) {
         const isDeal = r.is_open && r.wait_time <= r.props.best;
-        const dist = userPos && r.props.lat ? calculateDistance(userPos.lat, userPos.lon, r.props.lat, r.props.lon) : null;
+        const distKm = userPos && r.props.lat ? calculateDistance(userPos.lat, userPos.lon, r.props.lat, r.props.lon) : null;
         
+        let distText = "";
+        if (distKm !== null) {
+            if (distKm < 1) distText = Math.round(distKm * 1000) + " m";
+            else distText = distKm.toFixed(1) + " km";
+        }
+
         let color = r.is_open ? (r.wait_time > 45 ? 'var(--up)' : (r.wait_time > 15 ? 'var(--accent)' : 'var(--down)')) : 'var(--text-dim)';
         
         return `
@@ -162,10 +174,10 @@
                         ${r.is_open ? r.wait_time : '✕'}<span class="unit">${r.is_open ? 'MIN' : ''}</span>
                     </div>
                 </div>
-                ${dist && dist < 5000 ? `
+                ${distText ? `
                     <div class="dist-info">
-                        <svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
-                        ${dist}m entfernt
+                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        ${distText}
                     </div>` : ''}
             </div>
         `;
@@ -179,8 +191,8 @@
         
         flatRides.sort((a,b) => a.name.localeCompare(b.name)).forEach(r => {
             list.innerHTML += `
-                <div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid #222">
-                    <span style="font-size:0.9em">${r.name}</span>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #222">
+                    <span style="font-size:0.85em; max-width: 80%">${r.name}</span>
                     <input type="checkbox" ${selectedIds.includes(r.id) ? 'checked' : ''} onchange="toggle(${r.id})">
                 </div>
             `;
