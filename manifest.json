@@ -1,0 +1,21 @@
+{
+  "name": "EP Strategie Pro",
+  "short_name": "EP Pro",
+  "description": "Live Wartezeiten und Strategie für den Europa-Park",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0b1120",
+  "theme_color": "#0b1120",
+  "icons": [
+    {
+      "src": "https://fav.farm/🎢",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://fav.farm/🎢",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
