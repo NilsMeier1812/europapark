@@ -1,12 +1,11 @@
 /**
- * Dieses Skript wird von GitHub Actions aufgerufen.
- * Es führt eine einmalige Prüfung durch und beendet sich dann.
+ * Aktualisiertes Server-Skript für GitHub Actions.
+ * Unterstützt nun einen manuellen Push-Test über die App.
  */
 
 const admin = require('firebase-admin');
 const axios = require('axios');
 
-// Firebase Admin Initialisierung über Umgebungsvariablen (für GitHub Secrets)
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 if (!admin.apps.length) {
@@ -16,60 +15,88 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-const appId = "ep-strategie-pro"; 
+const appId = "ep-pro-strategie"; 
 
 async function runCheck() {
-    console.log("Starte Wartezeiten-Check...");
-    
+    console.log("Starte Lauf...");
     try {
         // 1. Daten vom Europa-Park holen
         const response = await axios.get("https://queue-times.com/parks/51/queue_times.json");
         const lands = response.data.lands;
         const allRides = {};
-        
-        lands.forEach(land => {
-            land.rides.forEach(ride => {
-                allRides[ride.id] = ride;
-            });
-        });
+        lands.forEach(land => land.rides.forEach(ride => { allRides[ride.id] = ride; }));
 
-        // 2. Aktive Jobs aus Firestore laden (Pfad gemäß deiner Regeln)
+        // 2. Alle Jobs aus Firestore laden
         const jobsSnapshot = await db.collection('artifacts').doc(appId)
             .collection('public').doc('data')
-            .collection('alertJobs').where('active', '==', true).get();
+            .collection('alertJobs').get();
 
         if (jobsSnapshot.empty) {
-            console.log("Keine aktiven Alarme vorhanden.");
+            console.log("Keine Jobs gefunden.");
             return;
         }
 
-        const promises = [];
+        const messages = [];
+        const jobsToUpdate = [];
 
-        // 3. Alarme prüfen
-        jobsSnapshot.forEach((doc) => {
-            const job = doc.data();
-            const userId = doc.id;
+        jobsSnapshot.forEach((docSnap) => {
+            const job = docSnap.data();
+            const userId = docSnap.id;
+            const fcmToken = job.fcmToken;
 
-            job.alerts.forEach(rideId => {
-                const currentRide = allRides[rideId];
-                // Kriterium: Offen und weniger als 20 Min Wartezeit
-                if (currentRide && currentRide.is_open && currentRide.wait_time <= 20) {
-                    console.log(`Bedingung erfüllt für User ${userId}: ${currentRide.name}`);
-                    
-                    /**
-                     * HIER FOLGT DIE PUSH-LOGIK (FCM)
-                     * Da wir noch keine Push-Tokens speichern, loggen wir es hier nur.
-                     * Sobald du FCM-Tokens in der DB hast, würdest du hier admin.messaging().send() aufrufen.
-                     */
-                }
-            });
+            if (!fcmToken) return;
+
+            let sendNow = false;
+            let messageBody = "";
+
+            // PRÜFUNG 1: Manueller Test-Request
+            if (job.testRequested === true) {
+                console.log(`Manueller Test-Push für User ${userId} angefordert.`);
+                sendNow = true;
+                messageBody = "🚀 Verbindungstest erfolgreich! Dein Handy empfängt Nachrichten vom GitHub-Server.";
+                // Flag zurücksetzen
+                jobsToUpdate.push({ id: userId, data: { testRequested: false } });
+            }
+
+            // PRÜFUNG 2: Wartezeiten (Normaler Betrieb)
+            if (job.active && job.alerts) {
+                job.alerts.forEach(rideId => {
+                    const currentRide = allRides[rideId];
+                    if (currentRide && currentRide.is_open && currentRide.wait_time <= 20) {
+                        sendNow = true;
+                        messageBody = `🎢 ${currentRide.name} hat nur noch ${currentRide.wait_time} min Wartezeit!`;
+                    }
+                });
+            }
+
+            if (sendNow && messageBody) {
+                messages.push({
+                    notification: {
+                        title: 'EP Strategie',
+                        body: messageBody
+                    },
+                    token: fcmToken
+                });
+            }
         });
 
-        await Promise.all(promises);
-        console.log("Check beendet.");
+        // 3. Nachrichten senden
+        if (messages.length > 0) {
+            console.log(`Sende ${messages.length} Nachricht(en)...`);
+            await admin.messaging().sendEach(messages);
+        }
+
+        // 4. Firestore-Status aktualisieren (Test-Flags zurücksetzen)
+        for (const update of jobsToUpdate) {
+            await db.collection('artifacts').doc(appId)
+                .collection('public').doc('data')
+                .collection('alertJobs').doc(update.id).update(update.data);
+        }
+
+        console.log("Lauf erfolgreich beendet.");
 
     } catch (error) {
-        console.error("Fehler im Lauf:", error);
+        console.error("Fehler im Skript:", error);
         process.exit(1);
     }
 }
