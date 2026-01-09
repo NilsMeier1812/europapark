@@ -159,8 +159,8 @@
     <button class="btn-icon" onclick="openSettings()">⚙️</button>
     <div class="sync-info">
         <div id="park-name">EUROPA-PARK</div>
-        <div id="last-sync-time">Synchronisiere...</div>
-        <span id="proxy-label">Multi-Proxy</span>
+        <div id="last-sync-time">Warte...</div>
+        <span id="proxy-label" style="font-size:0.5em;">Multi-Proxy</span>
     </div>
     <div class="toggle-group">
         <button id="btn-list" class="toggle-btn active" onclick="switchView('list')">Liste</button>
@@ -187,7 +187,9 @@
     <div id="settings-list"></div>
     
     <hr style="border:0; border-top:1px solid #222; margin: 25px 0;">
-    <button class="btn-icon" style="width:100%; background:var(--accent); height:50px; font-weight:bold;" onclick="testNotification()">Vibrationstest</button>
+    <button class="btn-icon" style="width:100%; background:var(--accent); height:50px; font-weight:bold; margin-bottom:10px;" onclick="testNotification()">📳 Lokaler Vibrationstest</button>
+    <button id="push-test-btn" class="btn-icon" style="width:100%; background:var(--gold); color:black; height:50px; font-weight:bold;" onclick="requestPushTest()">🚀 Cloud Push-Test anfordern</button>
+    <p id="push-test-info" style="font-size:0.65em; color:var(--text-dim); text-align:center; margin-top:10px;">Testet die Verbindung vom Server zu deinem Handy.</p>
 </div>
 
 <!-- Firebase & Push Module -->
@@ -197,7 +199,7 @@
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
     import { getMessaging, getToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js';
 
-    // --- INTEGRATED FIREBASE KONFIGURATION ---
+    // Hinweis: Diese Keys sind bereits integriert.
     const firebaseConfig = {
       apiKey: "AIzaSyAf4nF5XItLd6CC3sdQ_ePEYduaSTdXjGI",
       authDomain: "ep-pro-c768d.firebaseapp.com",
@@ -241,6 +243,21 @@
         if (!currentUser) return;
         const jobRef = doc(db, 'artifacts', appId, 'public', 'data', 'alertJobs', currentUser.uid);
         await setDoc(jobRef, { userId: currentUser.uid, alerts: alerts, active: alerts.length > 0 }, { merge: true });
+    };
+
+    // NEU: Funktion um Cloud Push Test anzufordern
+    window.requestPushTest = async () => {
+        if (!currentUser) return alert("Noch nicht eingeloggt.");
+        try {
+            const jobRef = doc(db, 'artifacts', appId, 'public', 'data', 'alertJobs', currentUser.uid);
+            await setDoc(jobRef, { testRequested: true }, { merge: true });
+            showToast("Test angefordert! Bitte GitHub Action starten.");
+            document.getElementById('push-test-btn').innerText = "⌛ Test angefordert...";
+            document.getElementById('push-test-btn').disabled = true;
+        } catch (err) {
+            console.error(err);
+            alert("Fehler beim Anfordern des Tests.");
+        }
     };
 
     document.getElementById('push-enable-btn').onclick = async () => {
