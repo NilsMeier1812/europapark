@@ -1,10 +1,6 @@
-/**
- * Firebase Messaging Service Worker
- */
 importScripts('https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging-compat.js');
 
-// --- INTEGRATED FIREBASE KONFIGURATION ---
 const firebaseConfig = {
   apiKey: "AIzaSyAf4nF5XItLd6CC3sdQ_ePEYduaSTdXjGI",
   authDomain: "ep-pro-c768d.firebaseapp.com",
@@ -18,10 +14,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
-// Hintergrund-Nachrichten verarbeiten
 messaging.onBackgroundMessage((payload) => {
-    console.log('[sw.js] Nachricht empfangen:', payload);
-    
+    console.log('Background Message:', payload);
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
