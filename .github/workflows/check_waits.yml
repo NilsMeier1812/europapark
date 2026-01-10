@@ -2,9 +2,9 @@ name: EP Wait Time Checker
 
 on:
   schedule:
-    # Führt das Skript alle 10 Minuten aus (Cron Syntax)
-    - cron: '*/10 * * * *'
-  workflow_dispatch: # Erlaubt manuelles Starten zum Testen
+    # Alle 5 Minuten ausführen
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # Manuell startbar
 
 jobs:
   check:
@@ -25,6 +25,5 @@ jobs:
 
       - name: Run Checker
         env:
-          # Das ist das Secret, das du in den GitHub Settings hinterlegen musst
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: node server.js
