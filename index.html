@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EP Strategie Ultra (Graph Edition)</title>
+    <title>EP Strategie Ultra (Graph Fix)</title>
     
+    <!-- PWA & Mobile Meta Tags -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b1120">
     <link rel="icon" href="https://fav.farm/🎢">
@@ -12,6 +13,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
+    <!-- Leaflet.js für die Karte -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <style>
@@ -35,12 +37,17 @@
             user-select: none;
         }
 
-        /* Header */
+        /* Header Bereich */
         header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 15px; height: 75px;
-            background: rgba(11, 17, 32, 0.95); backdrop-filter: blur(15px);
-            z-index: 1000; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            height: 75px;
+            background: rgba(11, 17, 32, 0.95);
+            backdrop-filter: blur(15px);
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             box-sizing: border-box;
         }
 
@@ -49,36 +56,93 @@
         #proxy-label { font-size: 0.5em; display: block; margin-top: 2px; font-weight: bold; }
         #park-name { font-size: 0.9em; font-weight: 900; letter-spacing: -0.5px; }
 
-        .toggle-group { display: flex; background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 3px; margin: 0 10px; }
-        .toggle-btn { border: none; background: none; color: var(--text-dim); padding: 8px 12px; font-size: 0.8em; font-weight: 700; border-radius: 10px; cursor: pointer; transition: 0.2s; }
+        .toggle-group {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 3px;
+            margin: 0 10px;
+        }
+
+        .toggle-btn {
+            border: none;
+            background: none;
+            color: var(--text-dim);
+            padding: 8px 12px;
+            font-size: 0.8em;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
         .toggle-btn.active { background: var(--accent); color: white; }
 
-        .btn-icon { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; }
+        .btn-icon {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: white;
+        }
 
         /* Views */
-        #list-view { padding: 15px; height: calc(100vh - 75px); overflow-y: auto; box-sizing: border-box; }
-        #map-view { width: 100vw; height: calc(100vh - 75px); display: none; position: relative; }
-        
-        .map-overlay-btn { position: absolute; right: 20px; bottom: 30px; z-index: 1001; background: var(--accent); color: white; border: none; border-radius: 50%; width: 55px; height: 55px; font-size: 1.5em; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        #list-view {
+            padding: 15px;
+            height: calc(100vh - 75px);
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        #map-view {
+            width: 100vw;
+            height: calc(100vh - 75px);
+            display: none;
+            position: relative;
+        }
+
+        .map-overlay-btn {
+            position: absolute;
+            right: 20px;
+            bottom: 30px;
+            z-index: 1001;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 55px;
+            height: 55px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
 
         /* Cards */
         .land-section { margin-top: 20px; }
         .land-title { font-size: 0.75em; font-weight: 800; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; border-left: 4px solid var(--accent); padding-left: 10px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
-        
         .card { 
             background: var(--card-bg); border-radius: 20px; padding: 16px; 
             border: 1px solid rgba(255, 255, 255, 0.05); position: relative; 
             min-height: 90px;
+            backdrop-filter: blur(10px);
         }
         
-        /* Zahnrad & Alarm Label */
         .settings-gear { position: absolute; top: 15px; right: 15px; font-size: 1.2em; cursor: pointer; opacity: 0.4; transition: 0.3s; z-index: 10; }
         .settings-gear.active { opacity: 1; color: var(--gold); text-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
         .settings-label { position: absolute; top: 18px; right: 45px; font-size: 0.6em; color: var(--gold); font-weight: bold; }
 
         .ride-name { font-size: 0.85em; font-weight: 600; min-height: 2.8em; margin-bottom: 8px; padding-right: 35px; line-height: 1.3; }
         .wait-time { font-size: 2.3em; font-weight: 900; }
+        .unit { font-size: 0.4em; color: var(--text-dim); margin-left: 2px; }
+
         .badge { font-size: 0.6em; font-weight: 800; padding: 3px 7px; border-radius: 6px; text-transform: uppercase; margin-bottom: 8px; display: inline-block; }
         .badge-sr { background: #6366f1; color: white; margin-right: 5px; }
         .badge-deal { background: var(--gold); color: #000; }
@@ -95,7 +159,7 @@
 
         .ride-marker { width: 34px; height: 34px; border-radius: 50%; border: 2.5px solid white; color: white; font-weight: 900; font-size: 13px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 
-        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent); color: white; padding: 12px 25px; border-radius: 15px; font-size: 0.85em; font-weight: bold; z-index: 5000; transition: transform 0.4s; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent); color: white; padding: 12px 25px; border-radius: 15px; font-size: 0.85em; z-index: 5000; transition: transform 0.4s; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #toast.show { transform: translateX(-50%) translateY(0); }
 
         /* Modals */
@@ -116,13 +180,13 @@
 </head>
 <body>
 
-<div id="toast">App geladen!</div>
+<div id="toast">Synchronisiert!</div>
 
 <header>
     <button class="btn-icon" onclick="openSettings()">⚙️</button>
     <div class="sync-info">
         <div id="park-name">EUROPA-PARK</div>
-        <div id="last-sync-time">Lade...</div>
+        <div id="last-sync-time">Warte...</div>
         <span id="proxy-label" style="font-size:0.5em;">Multi-Proxy</span>
     </div>
     <div class="toggle-group">
@@ -137,11 +201,10 @@
 <div id="list-view"><div id="main-content"></div></div>
 <div id="map-view"><button class="map-overlay-btn" onclick="resetMap()">🎯</button></div>
 
-<!-- Settings Modal -->
 <div id="settings-modal" class="modal">
-    <div class="modal-content">
+    <div class="modal-content" style="margin-top: 5vh; background: #0b1120;">
         <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:25px;">
-            <h2>Favoriten</h2>
+            <h2>Einstellungen</h2>
             <button class="btn-icon" onclick="closeSettings()">✕</button>
         </div>
         
@@ -152,25 +215,23 @@
         <div id="settings-list"></div>
         
         <hr style="border:0; border-top:1px solid #222; margin: 25px 0;">
+        <button class="btn-icon" style="width:100%; background:var(--accent); height:50px; font-weight:bold; margin-bottom:10px;" onclick="testNotification()">📳 Lokaler Vibrationstest</button>
         <button id="push-test-btn" class="btn-icon" style="width:100%; background:var(--gold); color:black; height:50px; font-weight:bold;" onclick="requestPushTest()">🚀 Cloud Push-Test</button>
         <p style="font-size:0.65em; color:var(--text-dim); text-align:center; margin-top:10px;">Testet die Server-Verbindung.</p>
     </div>
 </div>
 
-<!-- Ride Alert Modal -->
 <div id="ride-alert-modal" class="modal">
     <div class="modal-content">
         <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:20px;">
             <h2 id="alert-ride-name">Ride Name</h2>
             <button class="btn-icon" onclick="closeRideModal()">✕</button>
         </div>
-        
         <div class="input-group">
             <label>Alarm wenn weniger als:</label>
             <input type="number" id="alert-threshold" placeholder="20" inputmode="numeric">
             <p style="font-size:0.7em; color:var(--text-dim); margin-top:5px;">Minuten Wartezeit</p>
         </div>
-
         <button class="save-btn" onclick="saveRideAlert()">💾 Speichern & Aktivieren</button>
         <button class="delete-btn" onclick="deleteRideAlert()">Alarm löschen</button>
     </div>
@@ -183,7 +244,7 @@
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
     import { getMessaging, getToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js';
 
-    // DEINE DATEN
+    // --- DEINE ECHTEN KEYS ---
     const firebaseConfig = {
       apiKey: "AIzaSyAf4nF5XItLd6CC3sdQ_ePEYduaSTdXjGI",
       authDomain: "ep-pro-c768d.firebaseapp.com",
@@ -212,13 +273,11 @@
             if (Notification.permission !== 'granted') {
                 document.getElementById('push-enable-btn').style.display = 'block';
             }
-            // Lade Alarme (Map Struktur)
             const alertRef = doc(db, 'artifacts', APP_ID_PATH, 'users', user.uid, 'settings', 'alerts');
             onSnapshot(alertRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     window.enabledAlerts = data.alerts || {};
-                    // Fallback für Migration
                     if(Array.isArray(window.enabledAlerts)) window.enabledAlerts = {};
                     localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts));
                     if(window.renderList) window.renderList();
@@ -229,7 +288,6 @@
 
     window.syncAlertsToCloud = async (alerts) => {
         if (!currentUser) return;
-        // Speichere in alertJobs für den Server (Public Read/Write)
         const jobRef = doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'alertJobs', currentUser.uid);
         await setDoc(jobRef, { 
             userId: currentUser.uid, 
@@ -237,7 +295,7 @@
             active: Object.keys(alerts).length > 0 
         }, { merge: true });
         
-        // Speichere in User Settings (Private Backup)
+        // Backup in User Settings
         await setDoc(doc(db, 'artifacts', APP_ID_PATH, 'users', currentUser.uid, 'settings', 'alerts'), { alerts: alerts }, { merge: true });
     };
 
@@ -296,10 +354,10 @@
         } catch (err) { console.error("Push Fehler:", err); }
     };
 
-    // HISTORY FETCHING
+    // HISTORY FETCHING (Pullen der "main" Datei)
     window.fetchHistory = async () => {
         try {
-            const historyRef = doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'history_rolling');
+            const historyRef = doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'history_rolling', 'main');
             const snap = await getDoc(historyRef);
             if (snap.exists()) {
                 const data = snap.data();
@@ -363,9 +421,11 @@
 
     let parkData = {};
     let selectedIds = JSON.parse(localStorage.getItem('ep_favs')) || [];
-    let userPos = null, lastSync = 0, map, rideMarkers = [], userMarker, currentEditRideId = null;
+    let userPos = null;
+    let lastSync = 0;
+    let map, rideMarkers = [], userMarker;
+    let currentEditRideId = null;
 
-    // Funktion zum Finden von Ride-Props (Unscharfe Suche)
     function findProps(name) {
         if (RIDE_PROPS[name]) return RIDE_PROPS[name];
         const keys = Object.keys(RIDE_PROPS);
@@ -383,8 +443,13 @@
 
     function updateUserOnMap() {
         if (!map || !userPos) return;
-        if (!userMarker) userMarker = L.circleMarker([userPos.lat, userPos.lon], { radius: 9, color: '#fff', weight: 2, fillColor: '#38bdf8', fillOpacity: 1 }).addTo(map);
-        else userMarker.setLatLng([userPos.lat, userPos.lon]);
+        if (!userMarker) {
+            userMarker = L.circleMarker([userPos.lat, userPos.lon], { 
+                radius: 9, color: '#fff', weight: 2, fillColor: '#38bdf8', fillOpacity: 1 
+            }).addTo(map).bindPopup("Dein Standort");
+        } else {
+            userMarker.setLatLng([userPos.lat, userPos.lon]);
+        }
     }
 
     async function refresh(manual = false) {
@@ -413,7 +478,7 @@
             } catch (e) { label.innerText = `${p.name} Error`; }
         }
 
-        // 2. History Daten laden
+        // 2. History Daten laden (Mit korrigiertem Pfad)
         if(window.fetchHistory) await window.fetchHistory();
 
         document.getElementById('refresh-svg').classList.remove('spinning');
@@ -453,8 +518,6 @@
             if (!rideId) return;
             const waitTimes = [];
             sortedPoints.forEach(p => {
-                // p.rides[rideId] ist ein Objekt {w: 10, ...} oder direkt int, je nach Server.js
-                // Wir gehen sicher:
                 const entry = p.rides[rideId];
                 if (entry) {
                     const w = typeof entry === 'object' ? entry.w : entry;
@@ -510,11 +573,50 @@
         updateUserOnMap();
     }
 
-    // Modal Logic
-    window.openRideSettings = (id, name) => { currentEditRideId = id; document.getElementById('alert-ride-name').innerText = name; document.getElementById('alert-threshold').value = window.enabledAlerts[id] || 20; document.getElementById('ride-alert-modal').style.display = 'block'; }
-    window.closeRideModal = () => { document.getElementById('ride-alert-modal').style.display = 'none'; currentEditRideId = null; }
-    window.saveRideAlert = async () => { if(!currentEditRideId) return; const val = parseInt(document.getElementById('alert-threshold').value); if(isNaN(val)) return; window.enabledAlerts[currentEditRideId] = val; localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts)); if(window.syncAlertsToCloud) await window.syncAlertsToCloud(window.enabledAlerts); window.renderList(); closeRideModal(); showToast(`Alarm < ${val} min`); }
-    window.deleteRideAlert = async () => { if(!currentEditRideId) return; delete window.enabledAlerts[currentEditRideId]; localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts)); if(window.syncAlertsToCloud) await window.syncAlertsToCloud(window.enabledAlerts); window.renderList(); closeRideModal(); }
+    // --- NEUE EINSTELLUNGS-LOGIK ---
+    window.openRideSettings = (id, name) => {
+        currentEditRideId = id;
+        document.getElementById('alert-ride-name').innerText = name;
+        const val = window.enabledAlerts[id] || 20;
+        document.getElementById('alert-threshold').value = val;
+        document.getElementById('ride-alert-modal').style.display = 'block';
+    }
+
+    window.closeRideModal = () => {
+        document.getElementById('ride-alert-modal').style.display = 'none';
+        currentEditRideId = null;
+    }
+
+    window.saveRideAlert = async () => {
+        if(!currentEditRideId) return;
+        const val = parseInt(document.getElementById('alert-threshold').value);
+        if(isNaN(val) || val < 0) return alert("Bitte gültige Zahl eingeben");
+
+        window.enabledAlerts[currentEditRideId] = val;
+        localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts));
+        if (window.syncAlertsToCloud) await window.syncAlertsToCloud(window.enabledAlerts);
+        
+        window.renderList();
+        closeRideModal();
+        showToast(`Alarm bei < ${val} min gesetzt!`);
+    }
+
+    window.deleteRideAlert = async () => {
+        if(!currentEditRideId) return;
+        delete window.enabledAlerts[currentEditRideId];
+        localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts));
+        if (window.syncAlertsToCloud) await window.syncAlertsToCloud(window.enabledAlerts);
+        window.renderList();
+        closeRideModal();
+        showToast("Alarm gelöscht.");
+    }
+
+    function toggleFav(id) {
+        if (selectedIds.includes(id)) selectedIds = selectedIds.filter(i => i !== id);
+        else selectedIds.push(id);
+        localStorage.setItem('ep_favs', JSON.stringify(selectedIds));
+        window.renderList();
+    }
 
     function switchView(v) {
         document.getElementById('list-view').style.display = v==='list'?'block':'none';
@@ -523,7 +625,7 @@
         document.getElementById('btn-' + v).classList.add('active');
         if (v==='map') {
             if (!map) {
-                map = L.map('map-view', {zoomControl: false}).setView(CENTER, 17);
+                map = L.map('map-view', {zoomControl: false}).setView([48.266, 7.721], 16);
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
             }
             setTimeout(() => { map.invalidateSize(); updateMarkers(); updateUserOnMap(); }, 200);
