@@ -1,7 +1,7 @@
 const admin = require('firebase-admin');
 const axios = require('axios');
 
-// Key aus Secrets laden
+// Secret muss in GitHub Settings sein
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 if (!admin.apps.length) {
@@ -11,13 +11,13 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-const appId = "ep-pro-strategie"; // Pfad-Konstante muss identisch sein
+const appId = "ep-pro-strategie"; 
 
 async function runCheck() {
-    console.log("--- SERVER START ---");
-    console.log(`Prüfe Datenbank: artifacts/${appId}/public/data/alertJobs`);
+    console.log("--- SERVER LAUF START ---");
     
     try {
+        // Holen wir die Daten aus /alertJobs
         const jobsSnapshot = await db.collection('artifacts')
             .doc(appId)
             .collection('public')
@@ -26,7 +26,7 @@ async function runCheck() {
             .get();
 
         if (jobsSnapshot.empty) {
-            console.log("WARNUNG: Collection ist leer oder Pfad falsch.");
+            console.log("WARNUNG: Keine Jobs gefunden. Datenbank leer oder Pfad falsch?");
             return;
         }
 
@@ -37,49 +37,42 @@ async function runCheck() {
             const data = docSnap.data();
             const userId = docSnap.id;
             
-            // DIAGNOSE LOG: Was sehen wir im Dokument?
-            // (Verkürzt den Token für Sicherheit im Log)
-            const tokenPreview = data.fcmToken ? data.fcmToken.substring(0, 10) + "..." : "NICHT GEFUNDEN";
-            
-            if (data.testRequested === true) {
-                console.log(`[TEST] User ${userId} fordert Test an.`);
-                console.log(`       Token Status: ${tokenPreview}`);
-                
+            // DIAGNOSE
+            if (data.testRequested) {
+                console.log(`[TEST] User ${userId} will Test.`);
                 if (data.fcmToken) {
+                    console.log(`       ✅ Token gefunden! Sende Nachricht.`);
                     messages.push({
                         notification: {
-                            title: 'Verbindung steht! 🚀',
-                            body: 'Dies ist der Test vom GitHub-Server an dein Handy.'
+                            title: 'Verbindung erfolgreich! 🚀',
+                            body: 'Dein Server-Setup ist perfekt. Viel Spaß im Park!'
                         },
                         token: data.fcmToken
                     });
-                    // Flag zurücksetzen vormerken
                     updates.push(docSnap.ref);
                 } else {
-                    console.log(`       FEHLER: Test angefordert, aber kein 'fcmToken' im Dokument!`);
+                    console.log(`       ❌ FEHLER: Kein Token im Dokument.`);
                 }
             }
         });
 
         if (messages.length > 0) {
-            console.log(`Versende ${messages.length} Nachrichten...`);
+            console.log(`Sende ${messages.length} Nachrichten an FCM...`);
             const response = await admin.messaging().sendEach(messages);
-            console.log("FCM Antwort:", response.successCount + " erfolgreich.");
+            console.log("FCM Antwort:", response.successCount + " gesendet.");
             
-            // Flags zurücksetzen
             for (const ref of updates) {
                 await ref.update({ testRequested: false });
-                console.log("Test-Flag zurückgesetzt.");
             }
         } else {
-            console.log("Keine aktiven Aufgaben für diesen Lauf.");
+            console.log("Nichts zu tun.");
         }
 
     } catch (error) {
         console.error("CRASH:", error);
         process.exit(1);
     }
-    console.log("--- SERVER ENDE ---");
+    console.log("--- SERVER LAUF ENDE ---");
 }
 
 runCheck();
