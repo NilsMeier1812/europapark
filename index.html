@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EP Strategie Ultra (Graph Fix)</title>
+    <title>EP Strategie Ultra (Secure)</title>
     
-    <!-- PWA & Mobile Meta Tags -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b1120">
     <link rel="icon" href="https://fav.farm/🎢">
@@ -13,7 +12,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <!-- Leaflet.js für die Karte -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <style>
@@ -164,15 +162,19 @@
 
         /* Modals */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; padding: 25px; overflow-y: auto; backdrop-filter: blur(5px); }
-        .modal-content { background: #1e293b; padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); margin-top: 15vh; }
+        .modal-content { background: #1e293b; padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); margin-top: 5vh; }
         .settings-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #1e293b; }
         
         .input-group { margin: 20px 0; }
         .input-group label { display: block; margin-bottom: 10px; color: var(--text-dim); font-size: 0.9em; }
-        .input-group input { width: 100%; padding: 15px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 12px; font-size: 1.2em; box-sizing: border-box; }
+        .input-group input { width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 10px; font-size: 1em; box-sizing: border-box; }
         
         .save-btn { width: 100%; padding: 15px; background: var(--gold); color: black; border: none; border-radius: 12px; font-weight: bold; font-size: 1em; cursor: pointer; margin-bottom: 10px; }
         .delete-btn { width: 100%; padding: 15px; background: transparent; color: var(--up); border: 1px solid var(--up); border-radius: 12px; font-weight: bold; font-size: 1em; cursor: pointer; }
+
+        /* GitHub Config Section */
+        .gh-config { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
+        .gh-config h3 { margin-top: 0; color: var(--accent); font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; }
 
         .spinning { animation: rotate 0.8s linear infinite; }
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -201,13 +203,41 @@
 <div id="list-view"><div id="main-content"></div></div>
 <div id="map-view"><button class="map-overlay-btn" onclick="resetMap()">🎯</button></div>
 
+<!-- Settings Modal -->
 <div id="settings-modal" class="modal">
-    <div class="modal-content" style="margin-top: 5vh; background: #0b1120;">
+    <div class="modal-content">
         <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:25px;">
             <h2>Einstellungen</h2>
             <button class="btn-icon" onclick="closeSettings()">✕</button>
         </div>
         
+        <!-- GITHUB CONTROL -->
+        <div class="gh-config" id="gh-config-box">
+            <h3>GitHub Server Steuerung</h3>
+            
+            <button id="monitoring-toggle-btn" class="btn-icon" style="width:100%; background:var(--text-dim); font-weight:bold; margin-bottom:15px; height:50px; color:white; border:none;" onclick="toggleGitHubWorkflow()">
+                ⚪ Status wird geladen...
+            </button>
+
+            <details style="color:var(--text-dim); font-size:0.8em;">
+                <summary>Verbindungsdaten bearbeiten</summary>
+                <div class="input-group">
+                    <label>GitHub User:</label>
+                    <input type="text" id="gh-user" placeholder="z.B. DeinName">
+                </div>
+                <div class="input-group">
+                    <label>Repo Name:</label>
+                    <input type="text" id="gh-repo" placeholder="z.B. europapark">
+                </div>
+                <div class="input-group">
+                    <label>Token (Repo Scope):</label>
+                    <input type="password" id="gh-token" placeholder="ghp_...">
+                </div>
+                <button class="save-btn" style="background:#334155; margin-top:5px;" onclick="saveGitHubConfig()">Speichern</button>
+            </details>
+        </div>
+        
+        <!-- PUSH CONTROL -->
         <button id="push-enable-btn" style="width:100%; padding:15px; border-radius:12px; background:var(--gold); color:black; border:0; font-weight:bold; margin-bottom:20px; display:none;">
             🔔 Push-Nachrichten aktivieren
         </button>
@@ -215,12 +245,14 @@
         <div id="settings-list"></div>
         
         <hr style="border:0; border-top:1px solid #222; margin: 25px 0;">
-        <button class="btn-icon" style="width:100%; background:var(--accent); height:50px; font-weight:bold; margin-bottom:10px;" onclick="testNotification()">📳 Lokaler Vibrationstest</button>
-        <button id="push-test-btn" class="btn-icon" style="width:100%; background:var(--gold); color:black; height:50px; font-weight:bold;" onclick="requestPushTest()">🚀 Cloud Push-Test</button>
-        <p style="font-size:0.65em; color:var(--text-dim); text-align:center; margin-top:10px;">Testet die Server-Verbindung.</p>
+        <div style="display:flex; gap:10px;">
+            <button class="btn-icon" style="flex:1; background:var(--accent); font-weight:bold;" onclick="testNotification()">📳 Vibration</button>
+            <button id="push-test-btn" class="btn-icon" style="flex:1; background:var(--gold); color:black; font-weight:bold;" onclick="requestPushTest()">🚀 Cloud Test</button>
+        </div>
     </div>
 </div>
 
+<!-- Ride Alert Modal -->
 <div id="ride-alert-modal" class="modal">
     <div class="modal-content">
         <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:20px;">
@@ -244,7 +276,7 @@
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
     import { getMessaging, getToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js';
 
-    // --- DEINE ECHTEN KEYS ---
+    // DEINE FIREBASE CONFIG (Die hast du mir gegeben)
     const firebaseConfig = {
       apiKey: "AIzaSyAf4nF5XItLd6CC3sdQ_ePEYduaSTdXjGI",
       authDomain: "ep-pro-c768d.firebaseapp.com",
@@ -295,7 +327,6 @@
             active: Object.keys(alerts).length > 0 
         }, { merge: true });
         
-        // Backup in User Settings
         await setDoc(doc(db, 'artifacts', APP_ID_PATH, 'users', currentUser.uid, 'settings', 'alerts'), { alerts: alerts }, { merge: true });
     };
 
@@ -354,7 +385,7 @@
         } catch (err) { console.error("Push Fehler:", err); }
     };
 
-    // HISTORY FETCHING (Pullen der "main" Datei)
+    // HISTORY FETCHING
     window.fetchHistory = async () => {
         try {
             const historyRef = doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'history_rolling', 'main');
@@ -425,6 +456,93 @@
     let lastSync = 0;
     let map, rideMarkers = [], userMarker;
     let currentEditRideId = null;
+
+    // --- GITHUB CONTROL LOGIK ---
+    // Werte laden (leer initialisieren)
+    let ghUser = localStorage.getItem('gh_user') || "";
+    let ghRepo = localStorage.getItem('gh_repo') || "";
+    let ghToken = localStorage.getItem('gh_token') || "";
+
+    function loadGitHubConfig() {
+        document.getElementById('gh-user').value = ghUser;
+        document.getElementById('gh-repo').value = ghRepo;
+        document.getElementById('gh-token').value = ghToken;
+        if(ghUser && ghRepo && ghToken) checkWorkflowStatus();
+        else document.getElementById('monitoring-toggle-btn').innerText = "⚙️ GitHub Daten fehlen";
+    }
+
+    window.saveGitHubConfig = () => {
+        ghUser = document.getElementById('gh-user').value.trim();
+        ghRepo = document.getElementById('gh-repo').value.trim();
+        ghToken = document.getElementById('gh-token').value.trim();
+        
+        localStorage.setItem('gh_user', ghUser);
+        localStorage.setItem('gh_repo', ghRepo);
+        localStorage.setItem('gh_token', ghToken);
+        
+        showToast("GitHub Daten gespeichert!");
+        checkWorkflowStatus();
+    };
+
+    async function checkWorkflowStatus() {
+        document.getElementById('monitoring-toggle-btn').innerText = "⏳ Prüfe Status...";
+        try {
+            const resp = await fetch(`https://api.github.com/repos/${ghUser}/${ghRepo}/actions/workflows/check_waits.yml`, {
+                headers: { 'Authorization': `token ${ghToken}` }
+            });
+            if(resp.ok) {
+                const data = await resp.json();
+                updateSwitchUI(data.state === 'active');
+            } else {
+                console.error("GH Error", resp.status);
+                document.getElementById('monitoring-toggle-btn').innerText = "⚠️ Fehler (Token?)";
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    window.toggleGitHubWorkflow = async () => {
+        if(!ghUser || !ghRepo || !ghToken) return alert("Bitte erst GitHub Daten unten eingeben und speichern!");
+        
+        const btn = document.getElementById('monitoring-toggle-btn');
+        const isCurrentlyActive = btn.innerText.includes("AN");
+        const newState = isCurrentlyActive ? "disable" : "enable";
+        
+        btn.innerText = "⏳ Schalte um...";
+        btn.disabled = true;
+
+        try {
+            const resp = await fetch(`https://api.github.com/repos/${ghUser}/${ghRepo}/actions/workflows/check_waits.yml/${newState}`, {
+                method: 'PUT',
+                headers: { 
+                    'Authorization': `token ${ghToken}`,
+                    'Accept': 'application/vnd.github+json'
+                }
+            });
+            
+            if(resp.status === 204) {
+                showToast(isCurrentlyActive ? "Server gestoppt!" : "Server gestartet!");
+                updateSwitchUI(!isCurrentlyActive);
+            } else {
+                alert("Fehler beim Umschalten. Rechte prüfen!");
+            }
+        } catch(e) { alert("Netzwerkfehler: " + e.message); }
+        
+        btn.disabled = false;
+    };
+
+    function updateSwitchUI(isActive) {
+        const btn = document.getElementById('monitoring-toggle-btn');
+        if(isActive) {
+            btn.innerHTML = "🟢 Überwachung ist AN (Stoppen)";
+            btn.style.background = "var(--down)";
+            btn.style.color = "white";
+        } else {
+            btn.innerHTML = "🔴 Überwachung PAUSIERT (Starten)";
+            btn.style.background = "rgba(255,255,255,0.1)";
+            btn.style.color = "var(--text-dim)";
+        }
+    }
+    // --- ENDE GITHUB ---
 
     function findProps(name) {
         if (RIDE_PROPS[name]) return RIDE_PROPS[name];
@@ -625,7 +743,7 @@
         document.getElementById('btn-' + v).classList.add('active');
         if (v==='map') {
             if (!map) {
-                map = L.map('map-view', {zoomControl: false}).setView([48.266, 7.721], 16);
+                map = L.map('map-view', {zoomControl: false}).setView(CENTER, 17);
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
             }
             setTimeout(() => { map.invalidateSize(); updateMarkers(); updateUserOnMap(); }, 200);
@@ -639,8 +757,14 @@
         return d < 1 ? Math.round(d*1000)+"m" : d.toFixed(1)+"km";
     }
 
-    function openSettings() { document.getElementById('settings-modal').style.display='block'; window.renderSettings(); }
+    function openSettings() { 
+        document.getElementById('settings-modal').style.display='block'; 
+        window.renderSettings(); 
+        loadGitHubConfig(); 
+    }
+    
     function closeSettings() { document.getElementById('settings-modal').style.display='none'; }
+    
     window.renderSettings = () => {
         const list = document.getElementById('settings-list'); list.innerHTML = "";
         let flat = []; for(let l in parkData) flat = [...flat, ...parkData[l]];
