@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EP Strategie Ultra (Complete Edition)</title>
+    <title>EP Strategie Ultra (Complete)</title>
     
     <!-- PWA & Mobile Meta Tags -->
     <link rel="manifest" href="manifest.json">
@@ -37,6 +37,7 @@
             user-select: none;
         }
 
+        /* Header Bereich */
         header {
             display: flex;
             justify-content: space-between;
@@ -89,6 +90,7 @@
             color: white;
         }
 
+        /* Views */
         #list-view {
             padding: 15px;
             height: calc(100vh - 75px);
@@ -122,6 +124,7 @@
             cursor: pointer;
         }
 
+        /* Cards */
         .land-section { margin-top: 20px; }
         .land-title { font-size: 0.75em; font-weight: 800; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; border-left: 4px solid var(--accent); padding-left: 10px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
@@ -134,6 +137,7 @@
         .wait-time { font-size: 2.3em; font-weight: 900; }
         .unit { font-size: 0.4em; color: var(--text-dim); margin-left: 2px; }
 
+        /* Badges */
         .badge { font-size: 0.6em; font-weight: 800; padding: 3px 7px; border-radius: 6px; text-transform: uppercase; margin-bottom: 8px; display: inline-block; }
         .badge-sr { background: #6366f1; color: white; margin-right: 5px; }
         .badge-deal { background: var(--gold); color: #000; }
@@ -159,8 +163,8 @@
     <button class="btn-icon" onclick="openSettings()">⚙️</button>
     <div class="sync-info">
         <div id="park-name">EUROPA-PARK</div>
-        <div id="last-sync-time">Synchronisiere...</div>
-        <span id="proxy-label">Multi-Proxy</span>
+        <div id="last-sync-time">Warte...</div>
+        <span id="proxy-label" style="font-size:0.5em;">Multi-Proxy</span>
     </div>
     <div class="toggle-group">
         <button id="btn-list" class="toggle-btn active" onclick="switchView('list')">Liste</button>
@@ -199,7 +203,7 @@
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
     import { getMessaging, getToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js';
 
-    // --- FIREBASE KONFIGURATION ---
+    // --- DEINE FIREBASE KONFIGURATION ---
     const firebaseConfig = {
       apiKey: "AIzaSyAf4nF5XItLd6CC3sdQ_ePEYduaSTdXjGI",
       authDomain: "ep-pro-c768d.firebaseapp.com",
@@ -225,7 +229,7 @@
     onAuthStateChanged(auth, (user) => {
         currentUser = user;
         if (user) {
-            // Nur zeigen wenn Permission fehlt, sonst gehen wir davon aus dass es passt (oder Testbutton fixt es)
+            console.log("Logged in:", user.uid);
             if (Notification.permission !== 'granted') {
                 document.getElementById('push-enable-btn').style.display = 'block';
             }
@@ -246,7 +250,7 @@
         await setDoc(jobRef, { userId: currentUser.uid, alerts: alerts, active: alerts.length > 0 }, { merge: true });
     };
 
-    // NEU & REPARIERT: Holt Token UND setzt Flag in einem Aufwasch
+    // NEU: Holt Token UND setzt Flag in einem Aufwasch
     window.requestPushTest = async () => {
         if (!currentUser) return alert("Noch nicht eingeloggt.");
         const btn = document.getElementById('push-test-btn');
@@ -254,23 +258,23 @@
         btn.disabled = true;
 
         try {
-            // 1. Token neu abrufen (falls er fehlte)
+            // 1. Token neu abrufen
             let currentToken = null;
             if (Notification.permission === 'granted') {
                 currentToken = await getToken(messaging, { vapidKey: VAPID_KEY });
             }
 
             if (!currentToken) {
-                alert("Kein Push-Token erhalten! Bitte 'Push-Nachrichten aktivieren' klicken oder Berechtigungen prüfen.");
+                alert("Kein Push-Token erhalten! Bitte 'Push-Nachrichten aktivieren' klicken.");
                 btn.innerText = "❌ Fehler";
                 btn.disabled = false;
                 return;
             }
 
-            // 2. Alles zusammen speichern (Token + Request)
+            // 2. Alles zusammen speichern
             const jobRef = doc(db, 'artifacts', appId, 'public', 'data', 'alertJobs', currentUser.uid);
             await setDoc(jobRef, { 
-                fcmToken: currentToken,  // DAS hat gefehlt!
+                fcmToken: currentToken, 
                 testRequested: true,
                 lastUpdate: Date.now()
             }, { merge: true });
@@ -278,7 +282,6 @@
             showToast("Test angefordert & Token gespeichert!");
             btn.innerText = "✅ Warten auf GitHub...";
             
-            // Optional: Nach 5 Sekunden Button resetten
             setTimeout(() => {
                 btn.innerText = "🚀 Cloud Push-Test anfordern";
                 btn.disabled = false;
@@ -296,7 +299,6 @@
         try {
             const permission = await Notification.requestPermission();
             if (permission !== 'granted') return alert("Bitte Benachrichtigungen erlauben.");
-            // Hier passiert dasselbe wie beim Test-Button, nur ohne Test-Flag
             const token = await getToken(messaging, { vapidKey: VAPID_KEY });
             if (token && currentUser) {
                 const jobRef = doc(db, 'artifacts', appId, 'public', 'data', 'alertJobs', currentUser.uid);
@@ -318,6 +320,7 @@
         { name: "Cloud-A", url: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, wrap: true }
     ];
 
+    // VOLLSTÄNDIGE RIDE LISTE
     const RIDE_PROPS = {
         "WODAN - Timburcoaster": { sr: true, lat: 48.2625, lon: 7.7183, best: 35 },
         "blue fire Megacoaster": { sr: true, lat: 48.2618, lon: 7.7205, best: 30 },
@@ -327,12 +330,27 @@
         "Euro-Mir": { sr: true, lat: 48.2655, lon: 7.7210, best: 25 },
         "Piraten in Batavia": { sr: false, lat: 48.2665, lon: 7.7202, best: 15 },
         "Eurosat - CanCan Coaster": { sr: false, lat: 48.2673, lon: 7.7213, best: 25 },
-        "Snorri Touren": { sr: false, lat: 48.2662, lon: 7.7195, best: 20 },
-        "Fjord-Rafting": { sr: false, lat: 48.2655, lon: 7.7185, best: 30 },
+        "Eurosat Coastiality": { lat: 48.2672, lon: 7.7210, best: 30 },
         "Matterhorn-Blitz": { sr: false, lat: 48.2663, lon: 7.7218, best: 35 },
         "Schweizer Bobbahn": { sr: false, lat: 48.2660, lon: 7.7222, best: 20 },
-        "Tiroler Wildwasserbahn": { sr: false, lat: 48.2651, lon: 7.7235, best: 20 },
-        "Atlantica SuperSplash": { sr: false, lat: 48.2610, lon: 7.7215, best: 20 }
+        "Tiroler Wildwasserbahn": { sr: false, lat: 48.2651, lon: 7.7235, best: 25 },
+        "Alpenexpress Enzian": { sr: false, lat: 48.2648, lon: 7.7232, best: 15 },
+        "Poseidon": { sr: false, lat: 48.2645, lon: 7.7215, best: 25 },
+        "Atlantica SuperSplash": { sr: false, lat: 48.2610, lon: 7.7215, best: 20 },
+        "Pegasus - Die YoungStar Achterbahn": { lat: 48.2642, lon: 7.7210, best: 15 },
+        "Fluch der Kassandra": { lat: 48.2640, lon: 7.7205, best: 5 },
+        "Abenteuer Atlantis": { lat: 48.2638, lon: 7.7215, best: 15 },
+        "Snorri Touren": { sr: false, lat: 48.2662, lon: 7.7195, best: 20 },
+        "Fjord-Rafting": { sr: false, lat: 48.2655, lon: 7.7185, best: 30 },
+        "Vindjammer": { lat: 48.2660, lon: 7.7190, best: 10 },
+        "Geisterschloss": { lat: 48.2685, lon: 7.7230, best: 10 },
+        "Piccolo Mondo": { lat: 48.2688, lon: 7.7232, best: 5 },
+        "Volo da Vinci": { lat: 48.2682, lon: 7.7238, best: 20 },
+        "Euro-Tower": { lat: 48.2668, lon: 7.7215, best: 10 },
+        "Jungfrau-Gletscherflieger": { lat: 48.2658, lon: 7.7225, best: 10 },
+        "Wiener Wellenflieger": { lat: 48.2655, lon: 7.7230, best: 10 },
+        "Feria Swing": { lat: 48.2625, lon: 7.7235, best: 5 },
+        "Koffiekopjes": { lat: 48.2675, lon: 7.7195, best: 10 }
     };
 
     window.enabledAlerts = JSON.parse(localStorage.getItem('ep_alerts')) || [];
@@ -341,6 +359,14 @@
     let userPos = null;
     let lastSync = 0;
     let map, rideMarkers = [], userMarker;
+
+    // Funktion zum Finden von Ride-Props (auch bei leicht anderen Namen)
+    function findProps(name) {
+        if (RIDE_PROPS[name]) return RIDE_PROPS[name];
+        const keys = Object.keys(RIDE_PROPS);
+        for (let k of keys) { if (name.includes(k) || k.includes(name)) return RIDE_PROPS[k]; }
+        return { lat: 48.266, lon: 7.721, best: 10, isFallback: true };
+    }
 
     if (navigator.geolocation) {
         navigator.geolocation.watchPosition(pos => {
@@ -372,7 +398,7 @@
                     parkData = {};
                     data.lands.forEach(l => {
                         parkData[l.name] = l.rides.map(r => ({
-                            ...r, props: RIDE_PROPS[r.name] || { lat: 48.266, lon: 7.721, best: 10, sr: false }
+                            ...r, props: findProps(r.name)
                         }));
                     });
                     lastSync = Date.now();
@@ -413,7 +439,7 @@
         for (let l in parkData) {
             parkData[l].forEach(r => {
                 if (selectedIds.length > 0 && !selectedIds.includes(r.id)) return;
-                if (!r.props.lat || r.props.lat === 48.266) return;
+                if (r.props.isFallback) return; // Fallbacks nicht auf Karte zeigen um Chaos zu vermeiden
                 const color = r.is_open ? (r.wait_time > 30 ? 'var(--up)' : (r.wait_time > 15 ? 'var(--accent)' : 'var(--down)')) : '#444';
                 const icon = L.divIcon({ className: 'custom-icon', html: `<div class="ride-marker" style="background:${color}; ${r.wait_time <= r.props.best ? 'border-color:var(--gold)':''}">${r.is_open ? r.wait_time : '✕'}</div>`, iconSize: [34, 34] });
                 rideMarkers.push(L.marker([r.props.lat, r.props.lon], {icon}).addTo(map).bindPopup(r.name));
