@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EP Strategie Ultra (Custom Alerts)</title>
+    <title>EP Strategie Ultra (Graph Edition)</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b1120">
@@ -35,16 +35,12 @@
             user-select: none;
         }
 
+        /* Header */
         header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 15px;
-            height: 75px;
-            background: rgba(11, 17, 32, 0.95);
-            backdrop-filter: blur(15px);
-            z-index: 1000;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 15px; height: 75px;
+            background: rgba(11, 17, 32, 0.95); backdrop-filter: blur(15px);
+            z-index: 1000; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             box-sizing: border-box;
         }
 
@@ -53,103 +49,58 @@
         #proxy-label { font-size: 0.5em; display: block; margin-top: 2px; font-weight: bold; }
         #park-name { font-size: 0.9em; font-weight: 900; letter-spacing: -0.5px; }
 
-        .toggle-group {
-            display: flex;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 3px;
-            margin: 0 10px;
-        }
-
-        .toggle-btn {
-            border: none;
-            background: none;
-            color: var(--text-dim);
-            padding: 8px 12px;
-            font-size: 0.8em;
-            font-weight: 700;
-            border-radius: 10px;
-            cursor: pointer;
-        }
-
+        .toggle-group { display: flex; background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 3px; margin: 0 10px; }
+        .toggle-btn { border: none; background: none; color: var(--text-dim); padding: 8px 12px; font-size: 0.8em; font-weight: 700; border-radius: 10px; cursor: pointer; transition: 0.2s; }
         .toggle-btn.active { background: var(--accent); color: white; }
 
-        .btn-icon {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            width: 42px;
-            height: 42px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: white;
-        }
+        .btn-icon { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; }
 
-        #list-view {
-            padding: 15px;
-            height: calc(100vh - 75px);
-            overflow-y: auto;
-            box-sizing: border-box;
-        }
+        /* Views */
+        #list-view { padding: 15px; height: calc(100vh - 75px); overflow-y: auto; box-sizing: border-box; }
+        #map-view { width: 100vw; height: calc(100vh - 75px); display: none; position: relative; }
+        
+        .map-overlay-btn { position: absolute; right: 20px; bottom: 30px; z-index: 1001; background: var(--accent); color: white; border: none; border-radius: 50%; width: 55px; height: 55px; font-size: 1.5em; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
 
-        #map-view {
-            width: 100vw;
-            height: calc(100vh - 75px);
-            display: none;
-            position: relative;
-        }
-
-        .map-overlay-btn {
-            position: absolute;
-            right: 20px;
-            bottom: 30px;
-            z-index: 1001;
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 55px;
-            height: 55px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5em;
-            cursor: pointer;
-        }
-
+        /* Cards */
         .land-section { margin-top: 20px; }
         .land-title { font-size: 0.75em; font-weight: 800; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; border-left: 4px solid var(--accent); padding-left: 10px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
-        .card { background: var(--card-bg); border-radius: 20px; padding: 16px; border: 1px solid rgba(255, 255, 255, 0.05); position: relative; backdrop-filter: blur(10px); }
         
-        /* Das neue Zahnrad Icon */
-        .settings-gear { 
-            position: absolute; top: 15px; right: 15px; font-size: 1.2em; cursor: pointer; 
-            opacity: 0.4; transition: 0.3s;
+        .card { 
+            background: var(--card-bg); border-radius: 20px; padding: 16px; 
+            border: 1px solid rgba(255, 255, 255, 0.05); position: relative; 
+            min-height: 90px;
         }
+        
+        /* Zahnrad & Alarm Label */
+        .settings-gear { position: absolute; top: 15px; right: 15px; font-size: 1.2em; cursor: pointer; opacity: 0.4; transition: 0.3s; z-index: 10; }
         .settings-gear.active { opacity: 1; color: var(--gold); text-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
         .settings-label { position: absolute; top: 18px; right: 45px; font-size: 0.6em; color: var(--gold); font-weight: bold; }
 
         .ride-name { font-size: 0.85em; font-weight: 600; min-height: 2.8em; margin-bottom: 8px; padding-right: 35px; line-height: 1.3; }
         .wait-time { font-size: 2.3em; font-weight: 900; }
-        .unit { font-size: 0.4em; color: var(--text-dim); margin-left: 2px; }
-
         .badge { font-size: 0.6em; font-weight: 800; padding: 3px 7px; border-radius: 6px; text-transform: uppercase; margin-bottom: 8px; display: inline-block; }
         .badge-sr { background: #6366f1; color: white; margin-right: 5px; }
         .badge-deal { background: var(--gold); color: #000; }
         .dist-tag { font-size: 0.6em; color: var(--accent); margin-top: 5px; }
 
+        /* GRAPH STYLES */
+        .history-graph {
+            position: absolute; bottom: 10px; right: 10px;
+            width: 80px; height: 40px;
+            opacity: 0.9;
+            pointer-events: none;
+        }
+        .graph-line { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)); }
+
         .ride-marker { width: 34px; height: 34px; border-radius: 50%; border: 2.5px solid white; color: white; font-weight: 900; font-size: 13px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 
-        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent); color: white; padding: 12px 25px; border-radius: 15px; font-size: 0.85em; z-index: 5000; transition: transform 0.4s; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent); color: white; padding: 12px 25px; border-radius: 15px; font-size: 0.85em; font-weight: bold; z-index: 5000; transition: transform 0.4s; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #toast.show { transform: translateX(-50%) translateY(0); }
 
         /* Modals */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; padding: 25px; overflow-y: auto; backdrop-filter: blur(5px); }
-        .modal-content { background: #1e293b; padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); margin-top: 20vh; }
+        .modal-content { background: #1e293b; padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); margin-top: 15vh; }
         .settings-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #1e293b; }
         
         .input-group { margin: 20px 0; }
@@ -165,13 +116,13 @@
 </head>
 <body>
 
-<div id="toast">Synchronisiert!</div>
+<div id="toast">App geladen!</div>
 
 <header>
     <button class="btn-icon" onclick="openSettings()">⚙️</button>
     <div class="sync-info">
         <div id="park-name">EUROPA-PARK</div>
-        <div id="last-sync-time">Warte...</div>
+        <div id="last-sync-time">Lade...</div>
         <span id="proxy-label" style="font-size:0.5em;">Multi-Proxy</span>
     </div>
     <div class="toggle-group">
@@ -186,9 +137,9 @@
 <div id="list-view"><div id="main-content"></div></div>
 <div id="map-view"><button class="map-overlay-btn" onclick="resetMap()">🎯</button></div>
 
-<!-- Haupt-Einstellungen -->
+<!-- Settings Modal -->
 <div id="settings-modal" class="modal">
-    <div class="modal-content" style="margin-top: 5vh; background: #0b1120;">
+    <div class="modal-content">
         <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:25px;">
             <h2>Favoriten</h2>
             <button class="btn-icon" onclick="closeSettings()">✕</button>
@@ -202,7 +153,7 @@
         
         <hr style="border:0; border-top:1px solid #222; margin: 25px 0;">
         <button id="push-test-btn" class="btn-icon" style="width:100%; background:var(--gold); color:black; height:50px; font-weight:bold;" onclick="requestPushTest()">🚀 Cloud Push-Test</button>
-        <p style="font-size:0.65em; color:var(--text-dim); text-align:center; margin-top:10px;">Testet die Verbindung zum Server.</p>
+        <p style="font-size:0.65em; color:var(--text-dim); text-align:center; margin-top:10px;">Testet die Server-Verbindung.</p>
     </div>
 </div>
 
@@ -215,8 +166,8 @@
         </div>
         
         <div class="input-group">
-            <label>Benachrichtigen bei weniger als:</label>
-            <input type="number" id="alert-threshold" placeholder="z.B. 20" inputmode="numeric">
+            <label>Alarm wenn weniger als:</label>
+            <input type="number" id="alert-threshold" placeholder="20" inputmode="numeric">
             <p style="font-size:0.7em; color:var(--text-dim); margin-top:5px;">Minuten Wartezeit</p>
         </div>
 
@@ -228,11 +179,11 @@
 <!-- Firebase & Push Module -->
 <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-    import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+    import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
     import { getMessaging, getToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js';
 
-    // DEINE ECHTEN API KEYS
+    // DEINE DATEN
     const firebaseConfig = {
       apiKey: "AIzaSyAf4nF5XItLd6CC3sdQ_ePEYduaSTdXjGI",
       authDomain: "ep-pro-c768d.firebaseapp.com",
@@ -261,18 +212,14 @@
             if (Notification.permission !== 'granted') {
                 document.getElementById('push-enable-btn').style.display = 'block';
             }
-            // Lade Alarme (jetzt ein Objekt/Map!)
+            // Lade Alarme (Map Struktur)
             const alertRef = doc(db, 'artifacts', APP_ID_PATH, 'users', user.uid, 'settings', 'alerts');
             onSnapshot(alertRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    // Fallback für alte Datenstruktur (Array -> Objekt)
-                    if (Array.isArray(data.alerts)) {
-                        window.enabledAlerts = {}; 
-                        data.alerts.forEach(id => window.enabledAlerts[id] = 20); // Default 20min
-                    } else {
-                        window.enabledAlerts = data.alerts || {};
-                    }
+                    window.enabledAlerts = data.alerts || {};
+                    // Fallback für Migration
+                    if(Array.isArray(window.enabledAlerts)) window.enabledAlerts = {};
                     localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts));
                     if(window.renderList) window.renderList();
                 }
@@ -280,20 +227,18 @@
         }
     });
 
-    // Cloud Sync mit neuer Struktur
     window.syncAlertsToCloud = async (alerts) => {
         if (!currentUser) return;
+        // Speichere in alertJobs für den Server (Public Read/Write)
         const jobRef = doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'alertJobs', currentUser.uid);
-        // Speichere die Alerts als Map: { "rideId": threshold }
         await setDoc(jobRef, { 
             userId: currentUser.uid, 
             alerts: alerts, 
             active: Object.keys(alerts).length > 0 
         }, { merge: true });
         
-        // Auch im User-Settings speichern
-        const userSettingsRef = doc(db, 'artifacts', APP_ID_PATH, 'users', currentUser.uid, 'settings', 'alerts');
-        await setDoc(userSettingsRef, { alerts: alerts }, { merge: true });
+        // Speichere in User Settings (Private Backup)
+        await setDoc(doc(db, 'artifacts', APP_ID_PATH, 'users', currentUser.uid, 'settings', 'alerts'), { alerts: alerts }, { merge: true });
     };
 
     window.requestPushTest = async () => {
@@ -328,7 +273,6 @@
         }
     };
 
-    // Helper für SW Pfad
     window.getSWPath = () => {
         let path = window.location.pathname;
         if (!path.endsWith('/')) path = path.substring(0, path.lastIndexOf('/') + 1);
@@ -351,18 +295,29 @@
             }
         } catch (err) { console.error("Push Fehler:", err); }
     };
+
+    // HISTORY FETCHING
+    window.fetchHistory = async () => {
+        try {
+            const historyRef = doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'history_rolling');
+            const snap = await getDoc(historyRef);
+            if (snap.exists()) {
+                const data = snap.data();
+                if (data.points) {
+                    window.historyPoints = data.points;
+                    window.updateGraphs();
+                }
+            }
+        } catch (e) { console.log("History fetch failed", e); }
+    };
 </script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script>
     const QT_URL = "https://queue-times.com/parks/51/queue_times.json";
     const CENTER = [48.266, 7.721];
-    const PROXIES = [
-        { name: "Cloud-B (Fast)", url: u => `https://corsproxy.io/?${encodeURIComponent(u)}`, wrap: false },
-        { name: "Cloud-A", url: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, wrap: true }
-    ];
-
+    
+    // VOLLSTÄNDIGE RIDE LISTE
     const RIDE_PROPS = {
         "WODAN - Timburcoaster": { sr: true, lat: 48.2625, lon: 7.7183, best: 35 },
         "blue fire Megacoaster": { sr: true, lat: 48.2618, lon: 7.7205, best: 30 },
@@ -372,25 +327,51 @@
         "Euro-Mir": { sr: true, lat: 48.2655, lon: 7.7210, best: 25 },
         "Piraten in Batavia": { sr: false, lat: 48.2665, lon: 7.7202, best: 15 },
         "Eurosat - CanCan Coaster": { sr: false, lat: 48.2673, lon: 7.7213, best: 25 },
-        "Snorri Touren": { sr: false, lat: 48.2662, lon: 7.7195, best: 20 },
-        "Fjord-Rafting": { sr: false, lat: 48.2655, lon: 7.7185, best: 30 },
+        "Eurosat Coastiality": { lat: 48.2672, lon: 7.7210, best: 30 },
         "Matterhorn-Blitz": { sr: false, lat: 48.2663, lon: 7.7218, best: 35 },
         "Schweizer Bobbahn": { sr: false, lat: 48.2660, lon: 7.7222, best: 20 },
         "Tiroler Wildwasserbahn": { sr: false, lat: 48.2651, lon: 7.7235, best: 20 },
-        "Atlantica SuperSplash": { sr: false, lat: 48.2610, lon: 7.7215, best: 20 }
+        "Alpenexpress Enzian": { sr: false, lat: 48.2648, lon: 7.7232, best: 15 },
+        "Poseidon": { sr: false, lat: 48.2645, lon: 7.7215, best: 25 },
+        "Atlantica SuperSplash": { sr: false, lat: 48.2610, lon: 7.7215, best: 20 },
+        "Pegasus - Die YoungStar Achterbahn": { lat: 48.2642, lon: 7.7210, best: 15 },
+        "Fluch der Kassandra": { lat: 48.2640, lon: 7.7205, best: 5 },
+        "Abenteuer Atlantis": { lat: 48.2638, lon: 7.7215, best: 15 },
+        "Snorri Touren": { sr: false, lat: 48.2662, lon: 7.7195, best: 20 },
+        "Fjord-Rafting": { sr: false, lat: 48.2655, lon: 7.7185, best: 30 },
+        "Vindjammer": { lat: 48.2660, lon: 7.7190, best: 10 },
+        "Geisterschloss": { lat: 48.2685, lon: 7.7230, best: 10 },
+        "Piccolo Mondo": { lat: 48.2688, lon: 7.7232, best: 5 },
+        "Volo da Vinci": { lat: 48.2682, lon: 7.7238, best: 20 },
+        "Euro-Tower": { lat: 48.2668, lon: 7.7215, best: 10 },
+        "Jungfrau-Gletscherflieger": { lat: 48.2658, lon: 7.7225, best: 10 },
+        "Wiener Wellenflieger": { lat: 48.2655, lon: 7.7230, best: 10 },
+        "Feria Swing": { lat: 48.2625, lon: 7.7235, best: 5 },
+        "Koffiekopjes": { lat: 48.2675, lon: 7.7195, best: 10 },
+        "Ba-a-a Express": { lat: 48.2685, lon: 7.7195, best: 10 },
+        "Schlittenfahrt Schneeflöckchen": { lat: 48.2650, lon: 7.7205, best: 10 }
     };
 
-    // Alarme sind jetzt ein Objekt: { "rideId": threshold }
+    const PROXIES = [
+        { name: "Cloud-B (Fast)", url: u => `https://corsproxy.io/?${encodeURIComponent(u)}`, wrap: false },
+        { name: "Cloud-A", url: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, wrap: true }
+    ];
+
     window.enabledAlerts = JSON.parse(localStorage.getItem('ep_alerts')) || {};
-    // Migration falls alte Array-Daten da sind
-    if (Array.isArray(window.enabledAlerts)) window.enabledAlerts = {};
+    window.historyPoints = [];
+    if(Array.isArray(window.enabledAlerts)) window.enabledAlerts = {};
 
     let parkData = {};
     let selectedIds = JSON.parse(localStorage.getItem('ep_favs')) || [];
-    let userPos = null;
-    let lastSync = 0;
-    let map, rideMarkers = [], userMarker;
-    let currentEditRideId = null;
+    let userPos = null, lastSync = 0, map, rideMarkers = [], userMarker, currentEditRideId = null;
+
+    // Funktion zum Finden von Ride-Props (Unscharfe Suche)
+    function findProps(name) {
+        if (RIDE_PROPS[name]) return RIDE_PROPS[name];
+        const keys = Object.keys(RIDE_PROPS);
+        for (let k of keys) { if (name.includes(k) || k.includes(name)) return RIDE_PROPS[k]; }
+        return { lat: 48.266, lon: 7.721, best: 10, isFallback: true };
+    }
 
     if (navigator.geolocation) {
         navigator.geolocation.watchPosition(pos => {
@@ -402,18 +383,15 @@
 
     function updateUserOnMap() {
         if (!map || !userPos) return;
-        if (!userMarker) {
-            userMarker = L.circleMarker([userPos.lat, userPos.lon], { 
-                radius: 9, color: '#fff', weight: 2, fillColor: '#38bdf8', fillOpacity: 1 
-            }).addTo(map).bindPopup("Dein Standort");
-        } else {
-            userMarker.setLatLng([userPos.lat, userPos.lon]);
-        }
+        if (!userMarker) userMarker = L.circleMarker([userPos.lat, userPos.lon], { radius: 9, color: '#fff', weight: 2, fillColor: '#38bdf8', fillOpacity: 1 }).addTo(map);
+        else userMarker.setLatLng([userPos.lat, userPos.lon]);
     }
 
     async function refresh(manual = false) {
         if (manual) document.getElementById('refresh-svg').classList.add('spinning');
         const label = document.getElementById('proxy-label');
+        
+        // 1. Live Daten
         for (let p of PROXIES) {
             try {
                 const resp = await fetch(p.url(QT_URL + "?cb=" + Date.now()), { signal: AbortSignal.timeout(7000) });
@@ -422,7 +400,7 @@
                     parkData = {};
                     data.lands.forEach(l => {
                         parkData[l.name] = l.rides.map(r => ({
-                            ...r, props: RIDE_PROPS[r.name] || { lat: 48.266, lon: 7.721, best: 10, sr: false }
+                            ...r, props: findProps(r.name)
                         }));
                     });
                     lastSync = Date.now();
@@ -434,8 +412,59 @@
                 }
             } catch (e) { label.innerText = `${p.name} Error`; }
         }
+
+        // 2. History Daten laden
+        if(window.fetchHistory) await window.fetchHistory();
+
         document.getElementById('refresh-svg').classList.remove('spinning');
     }
+
+    // --- GRAPH LOGIC ---
+    function drawSparkline(data) {
+        if (!data || data.length < 2) return '';
+        const width = 80; const height = 40;
+        const maxVal = Math.max(...data, 60); 
+        const minVal = 0;
+        
+        const points = data.map((val, i) => {
+            const x = (i / (data.length - 1)) * width;
+            const y = height - ((val - minVal) / (maxVal - minVal)) * height;
+            return `${x},${y}`;
+        }).join(' ');
+
+        const last = data[data.length-1];
+        const prev = data[data.length-2];
+        const color = last < prev ? 'var(--down)' : (last > prev ? 'var(--up)' : 'var(--accent)');
+
+        return `
+            <svg width="${width}" height="${height}" class="history-graph">
+                <polyline points="${points}" class="graph-line" stroke="${color}"/>
+                <circle cx="${width}" cy="${height - ((last/maxVal)*height)}" r="3" fill="${color}" />
+            </svg>
+        `;
+    }
+
+    window.updateGraphs = () => {
+        if (!window.historyPoints || window.historyPoints.length === 0) return;
+        const sortedPoints = window.historyPoints.sort((a,b) => a.t - b.t);
+
+        document.querySelectorAll('.card').forEach(card => {
+            const rideId = card.getAttribute('data-ride-id');
+            if (!rideId) return;
+            const waitTimes = [];
+            sortedPoints.forEach(p => {
+                // p.rides[rideId] ist ein Objekt {w: 10, ...} oder direkt int, je nach Server.js
+                // Wir gehen sicher:
+                const entry = p.rides[rideId];
+                if (entry) {
+                    const w = typeof entry === 'object' ? entry.w : entry;
+                    if(w >= 0) waitTimes.push(w);
+                }
+            });
+            const container = document.getElementById('graph-container-' + rideId);
+            if (container) container.innerHTML = drawSparkline(waitTimes);
+        });
+    };
 
     window.renderList = () => {
         const container = document.getElementById('main-content');
@@ -446,22 +475,24 @@
             container.innerHTML += `<div class="land-section"><div class="land-title">${land}</div><div class="grid">${rides.map(r => {
                 const isDeal = r.is_open && r.wait_time <= r.props.best;
                 const d = userPos ? calcDist(userPos.lat, userPos.lon, r.props.lat, r.props.lon) : "";
-                
-                // Prüfen ob Alarm aktiv (ID ist Key im Objekt)
                 const alertActive = window.enabledAlerts.hasOwnProperty(r.id);
                 const threshold = alertActive ? window.enabledAlerts[r.id] : null;
 
-                return `<div class="card" style="${isDeal ? 'border-color:var(--gold)' : ''}">
+                return `<div class="card" data-ride-id="${r.id}" style="${isDeal ? 'border-color:var(--gold)' : ''}">
                     <div class="settings-gear ${alertActive ? 'active' : ''}" onclick="openRideSettings('${r.id}', '${r.name.replace(/'/g, "\\'")}')">⚙️</div>
                     ${alertActive ? `<div class="settings-label">🔔 < ${threshold}m</div>` : ''}
                     
                     <div>${r.props.sr ? '<span class="badge badge-sr">SR</span>' : ''}${isDeal ? '<span class="badge badge-deal">Deal</span>' : ''}</div>
                     <div class="ride-name">${r.name}</div>
-                    <div class="wait-time" style="color:${r.is_open ? (r.wait_time > 40 ? 'var(--up)' : 'var(--accent)') : 'var(--text-dim)'}">${r.is_open ? r.wait_time : '✕'}<span style="font-size:0.4em">MIN</span></div>
+                    <div class="wait-time" style="color:${r.is_open ? (r.wait_time > 40 ? 'var(--up)' : 'var(--accent)') : 'var(--text-dim)'}">${r.is_open ? r.wait_time : '✕'}</div>
                     ${d ? `<div class="dist-tag">📍 ${d}</div>` : ''}
+                    
+                    <!-- Graph Placeholder -->
+                    <div id="graph-container-${r.id}"></div>
                 </div>`;
             }).join('')}</div></div>`;
         }
+        window.updateGraphs();
     }
 
     function updateMarkers() {
@@ -470,7 +501,7 @@
         for (let l in parkData) {
             parkData[l].forEach(r => {
                 if (selectedIds.length > 0 && !selectedIds.includes(r.id)) return;
-                if (!r.props.lat || r.props.lat === 48.266) return;
+                if (r.props.isFallback) return; 
                 const color = r.is_open ? (r.wait_time > 30 ? 'var(--up)' : (r.wait_time > 15 ? 'var(--accent)' : 'var(--down)')) : '#444';
                 const icon = L.divIcon({ className: 'custom-icon', html: `<div class="ride-marker" style="background:${color}; ${r.wait_time <= r.props.best ? 'border-color:var(--gold)':''}">${r.is_open ? r.wait_time : '✕'}</div>`, iconSize: [34, 34] });
                 rideMarkers.push(L.marker([r.props.lat, r.props.lon], {icon}).addTo(map).bindPopup(r.name));
@@ -479,59 +510,11 @@
         updateUserOnMap();
     }
 
-    // --- NEUE EINSTELLUNGS-LOGIK ---
-    window.openRideSettings = (id, name) => {
-        currentEditRideId = id;
-        document.getElementById('alert-ride-name').innerText = name;
-        
-        // Wert laden oder Default
-        const val = window.enabledAlerts[id] || 20;
-        document.getElementById('alert-threshold').value = val;
-        
-        document.getElementById('ride-alert-modal').style.display = 'block';
-    }
-
-    window.closeRideModal = () => {
-        document.getElementById('ride-alert-modal').style.display = 'none';
-        currentEditRideId = null;
-    }
-
-    window.saveRideAlert = async () => {
-        if(!currentEditRideId) return;
-        const val = parseInt(document.getElementById('alert-threshold').value);
-        if(isNaN(val) || val < 0) return alert("Bitte gültige Zahl eingeben");
-
-        // Speichern in Map
-        window.enabledAlerts[currentEditRideId] = val;
-        
-        localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts));
-        if (window.syncAlertsToCloud) await window.syncAlertsToCloud(window.enabledAlerts);
-        
-        window.renderList();
-        closeRideModal();
-        showToast(`Alarm bei < ${val} min gesetzt!`);
-    }
-
-    window.deleteRideAlert = async () => {
-        if(!currentEditRideId) return;
-        
-        // Löschen aus Map
-        delete window.enabledAlerts[currentEditRideId];
-        
-        localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts));
-        if (window.syncAlertsToCloud) await window.syncAlertsToCloud(window.enabledAlerts);
-        
-        window.renderList();
-        closeRideModal();
-        showToast("Alarm gelöscht.");
-    }
-
-    function toggleFav(id) {
-        if (selectedIds.includes(id)) selectedIds = selectedIds.filter(i => i !== id);
-        else selectedIds.push(id);
-        localStorage.setItem('ep_favs', JSON.stringify(selectedIds));
-        window.renderList();
-    }
+    // Modal Logic
+    window.openRideSettings = (id, name) => { currentEditRideId = id; document.getElementById('alert-ride-name').innerText = name; document.getElementById('alert-threshold').value = window.enabledAlerts[id] || 20; document.getElementById('ride-alert-modal').style.display = 'block'; }
+    window.closeRideModal = () => { document.getElementById('ride-alert-modal').style.display = 'none'; currentEditRideId = null; }
+    window.saveRideAlert = async () => { if(!currentEditRideId) return; const val = parseInt(document.getElementById('alert-threshold').value); if(isNaN(val)) return; window.enabledAlerts[currentEditRideId] = val; localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts)); if(window.syncAlertsToCloud) await window.syncAlertsToCloud(window.enabledAlerts); window.renderList(); closeRideModal(); showToast(`Alarm < ${val} min`); }
+    window.deleteRideAlert = async () => { if(!currentEditRideId) return; delete window.enabledAlerts[currentEditRideId]; localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts)); if(window.syncAlertsToCloud) await window.syncAlertsToCloud(window.enabledAlerts); window.renderList(); closeRideModal(); }
 
     function switchView(v) {
         document.getElementById('list-view').style.display = v==='list'?'block':'none';
@@ -560,7 +543,7 @@
         const list = document.getElementById('settings-list'); list.innerHTML = "";
         let flat = []; for(let l in parkData) flat = [...flat, ...parkData[l]];
         flat.sort((a,b)=>a.name.localeCompare(b.name)).forEach(r => {
-            list.innerHTML += `<div class="settings-item"><span>${r.name}</span><input type="checkbox" style="width:22px; height:22px" ${selectedIds.includes(r.id)?'checked':''} onchange="toggleFav(${r.id})"></div>`;
+            list.innerHTML += `<div class="settings-item"><span>${r.name}</span><input type="checkbox" ${selectedIds.includes(r.id)?'checked':''} onchange="toggleFav(${r.id})"></div>`;
         });
     };
     function manualRefresh() { refresh(true); }
@@ -568,7 +551,6 @@
     function showToast(m, bg) { const t=document.getElementById('toast'); t.innerText=m; if(bg) t.style.background=bg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); }
     function testNotification() { if ("vibrate" in navigator) navigator.vibrate([400, 100, 400]); showToast("Vibration ok!"); }
 
-    setInterval(() => { if (lastSync > 0) document.getElementById('last-sync-time').innerText = "Stand: " + Math.round((Date.now()-lastSync)/1000) + "s alt"; }, 5000);
     refresh();
     setInterval(refresh, 90000);
 
