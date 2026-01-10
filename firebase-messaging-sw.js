@@ -1,7 +1,7 @@
 importScripts('https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging-compat.js');
 
-// DEINE ECHTEN KEYS
+// DEINE FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyAf4nF5XItLd6CC3sdQ_ePEYduaSTdXjGI",
   authDomain: "ep-pro-c768d.firebaseapp.com",
@@ -15,13 +15,15 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
+// Listener für Nachrichten im Hintergrund
 messaging.onBackgroundMessage((payload) => {
     console.log('[SW] Push empfangen:', payload);
+    
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
-        icon: 'https://fav.farm/🎢',
-        vibrate: [300, 100, 300], // Vibration wenn App zu ist
+        icon: 'https://fav.farm/🎢', // Icon für die Benachrichtigung
+        vibrate: [200, 100, 200],
         tag: 'ep-alert'
     };
 
