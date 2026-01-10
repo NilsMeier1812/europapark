@@ -14,15 +14,9 @@ const db = admin.firestore();
 const appId = "ep-pro-strategie"; 
 
 async function runCheck() {
-    console.log("--- DIAGNOSE LAUF START ---");
-    console.log("Suche in App-ID:", appId);
+    console.log("--- START FELD-DIAGNOSE ---");
     
     try {
-        // 1. Pfad-Check: Wir listen mal alle Dokumente im alertJobs Ordner auf
-        // Wir probieren den Pfad absolut anzusprechen
-        const jobsPath = `artifacts/${appId}/public/data/alertJobs`;
-        console.log("Prüfe Pfad:", jobsPath);
-        
         const jobsSnapshot = await db.collection('artifacts')
             .doc(appId)
             .collection('public')
@@ -30,12 +24,8 @@ async function runCheck() {
             .collection('alertJobs')
             .get();
 
-        console.log(`Anzahl gefundener User-Dokumente: ${jobsSnapshot.size}`);
-
         if (jobsSnapshot.empty) {
-            console.log("❌ FEHLER: Keine Dokumente unter diesem Pfad gefunden!");
-            console.log("Bitte prüfe in der Firebase Console, ob der Pfad exakt so aussieht:");
-            console.log("artifacts -> ep-pro-strategie -> public -> data -> alertJobs");
+            console.log("❌ Keine Dokumente gefunden.");
             return;
         }
 
@@ -45,44 +35,46 @@ async function runCheck() {
         jobsSnapshot.forEach((docSnap) => {
             const job = docSnap.data();
             const userId = docSnap.id;
-            console.log(`Prüfe User: ${userId}`);
-            console.log(`- Token vorhanden: ${!!job.fcmToken}`);
-            console.log(`- testRequested: ${job.testRequested}`);
+            
+            // DIAGNOSE: Zeige uns alle vorhandenen Felder
+            const fields = Object.keys(job);
+            console.log(`User: ${userId} | Felder im Dokument: [${fields.join(', ')}]`);
 
-            // Test-Logik
-            if (job.testRequested === true && job.fcmToken) {
-                console.log(`✅ TEST-TREFFER für ${userId}! Bereite Nachricht vor...`);
-                messages.push({
-                    notification: {
-                        title: 'EP Strategie: Verbindung steht! 🚀',
-                        body: 'Dein Server-Check funktioniert. Die Rakete ist gelandet!'
-                    },
-                    token: job.fcmToken
-                });
-                updates.push({ id: userId, ref: docSnap.ref });
+            // Wir versuchen verschiedene Feldnamen für den Token
+            const token = job.fcmToken || job.token || job.pushToken;
+
+            if (token) {
+                console.log(`✅ Token erkannt (Länge: ${token.length})`);
+                
+                if (job.testRequested === true) {
+                    console.log(`🚀 Sende Test-Nachricht an ${userId}...`);
+                    messages.push({
+                        notification: {
+                            title: 'EP Strategie: Test OK! ✅',
+                            body: 'Der Server hat deinen Token gefunden und die Nachricht gesendet.'
+                        },
+                        token: token
+                    });
+                    updates.push({ ref: docSnap.ref });
+                }
+            } else {
+                console.log(`❌ Kein Token-Feld gefunden. Bitte stelle sicher, dass das Feld 'fcmToken' heißt.`);
             }
         });
 
-        // 2. Nachrichten senden
         if (messages.length > 0) {
-            console.log(`Sende ${messages.length} Nachricht(en) via FCM...`);
             const response = await admin.messaging().sendEach(messages);
             console.log("FCM Antwort:", JSON.stringify(response));
             
-            // 3. Flags zurücksetzen
             for (const item of updates) {
                 await item.ref.update({ testRequested: false });
-                console.log(`Flag für ${item.id} auf false gesetzt.`);
             }
-        } else {
-            console.log("Keine Nachrichten zu versenden.");
         }
 
     } catch (error) {
-        console.error("KRITISCHER SKRIPT-FEHLER:", error);
-        process.exit(1);
+        console.error("SKRIPT-FEHLER:", error);
     }
-    console.log("--- DIAGNOSE LAUF ENDE ---");
+    console.log("--- ENDE FELD-DIAGNOSE ---");
 }
 
 runCheck();
