@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EP Strategie Ultra (Diagnose)</title>
+    <title>EP Strategie Ultra (Pfad Fix)</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b1120">
@@ -33,11 +33,10 @@
         .alert-toggle.enabled { opacity: 1; color: var(--gold); }
         .ride-name { font-size: 0.85em; font-weight: 600; min-height: 2.8em; margin-bottom: 8px; padding-right: 25px; }
         .wait-time { font-size: 2.3em; font-weight: 900; }
-        .ride-marker { width: 34px; height: 34px; border-radius: 50%; border: 2.5px solid white; color: white; font-weight: 900; font-size: 13px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent); color: white; padding: 12px 25px; border-radius: 15px; font-size: 0.85em; z-index: 5000; transition: transform 0.4s; }
         #toast.show { transform: translateX(-50%) translateY(0); }
         #settings-modal { display: none; position: fixed; inset: 0; background: #000; z-index: 3000; padding: 25px; overflow-y: auto; }
-        .settings-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #1e293b; }
+        .settings-item { display: flex; justify-content: space-between; padding: 15px; border-bottom: 1px solid #1e293b; }
         .spinning { animation: rotate 0.8s linear infinite; }
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
@@ -50,22 +49,20 @@
     <button class="btn-icon" onclick="openSettings()">⚙️</button>
     <div class="sync-info">
         <div id="park-name">EUROPA-PARK</div>
-        <div id="last-sync-time">Warte...</div>
+        <div id="last-sync-time">Lade...</div>
     </div>
     <div class="toggle-group">
         <button id="btn-list" class="toggle-btn active" onclick="switchView('list')">Liste</button>
         <button id="btn-map" class="toggle-btn" onclick="switchView('map')">Karte</button>
     </div>
-    <button id="refresh-btn" class="btn-icon" onclick="manualRefresh()">
-        <svg id="refresh-svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-    </button>
+    <button id="refresh-btn" class="btn-icon" onclick="manualRefresh()">🔄</button>
 </header>
 
 <div id="list-view"><div id="main-content"></div></div>
 <div id="map-view"><button class="map-overlay-btn" onclick="resetMap()">🎯</button></div>
 
 <div id="settings-modal">
-    <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:25px;">
+    <div style="display:flex; justify-content: space-between; margin-bottom:25px;">
         <h2>Einstellungen</h2>
         <button class="btn-icon" onclick="closeSettings()">✕</button>
     </div>
@@ -78,7 +75,7 @@
     
     <hr style="border:0; border-top:1px solid #222; margin: 25px 0;">
     <button id="push-test-btn" class="btn-icon" style="width:100%; background:var(--gold); color:black; height:50px; font-weight:bold;" onclick="requestPushTest()">🚀 Cloud Push-Test anfordern</button>
-    <p id="debug-log" style="font-size:0.65em; color:var(--up); font-family:monospace; margin-top:10px; white-space: pre-wrap;">Log:</p>
+    <p id="debug-log" style="font-size:0.65em; color:#f87171; font-family:monospace; margin-top:10px; white-space: pre-wrap; background:rgba(0,0,0,0.5); padding:10px; border-radius:8px;">Log:</p>
 </div>
 
 <script type="module">
@@ -101,7 +98,6 @@
     const VAPID_KEY = "BFp2JrM56fRBkdVd6izSz7slAIP513-LhE3LgV049a8-9QVxzpIUjsqFU6bgNTQOjFPZR8yXfYymRGad0IbvPKo";
     const APP_ID_PATH = 'ep-pro-strategie';
 
-    // Init
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
@@ -112,23 +108,25 @@
     function log(msg) {
         console.log(msg);
         const logEl = document.getElementById('debug-log');
-        logEl.innerText = msg + "\n" + logEl.innerText.substring(0, 200);
+        logEl.innerText = msg + "\n" + logEl.innerText.substring(0, 300);
     }
 
-    log("Starte Auth...");
+    log("App Start...");
     signInAnonymously(auth).catch(err => log("AUTH FEHLER: " + err.message));
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentUser = user;
-            log("Eingeloggt: " + user.uid.substring(0,5)+"...");
+            log("User ID: " + user.uid.substring(0,5)+"...");
+            
             if (Notification.permission !== 'granted') {
                 document.getElementById('push-enable-btn').style.display = 'block';
             }
-            // Load Settings
-            onSnapshot(doc(db, 'artifacts', APP_ID_PATH, 'users', user.uid, 'settings', 'alerts'), (snap) => {
-                if (snap.exists()) {
-                    window.enabledAlerts = snap.data().active || [];
+
+            const alertRef = doc(db, 'artifacts', APP_ID_PATH, 'users', user.uid, 'settings', 'alerts');
+            onSnapshot(alertRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    window.enabledAlerts = docSnap.data().active || [];
                     localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts));
                     if(window.renderList) window.renderList();
                 }
@@ -136,69 +134,110 @@
         }
     });
 
-    // Cloud Sync
     window.syncAlertsToCloud = async (alerts) => {
         if (!currentUser) return;
-        await setDoc(doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'alertJobs', currentUser.uid), { 
-            userId: currentUser.uid, alerts: alerts, active: alerts.length > 0 
-        }, { merge: true });
+        try {
+            await setDoc(doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'alertJobs', currentUser.uid), { 
+                userId: currentUser.uid, alerts: alerts, active: alerts.length > 0 
+            }, { merge: true });
+        } catch(e) { log("Sync Fehler: " + e.message); }
     };
 
-    // TEST BUTTON LOGIK
+    // Helper: Pfad-Erkennung
+    function getSWPath() {
+        // Findet heraus, in welchem Ordner wir sind (z.B. /europapark/)
+        let path = window.location.pathname;
+        if (!path.endsWith('/')) {
+            path = path.substring(0, path.lastIndexOf('/') + 1);
+        }
+        return path + 'firebase-messaging-sw.js';
+    }
+
+    // BUTTON 1: Push Aktivierung
+    document.getElementById('push-enable-btn').onclick = async () => {
+        log("Fordere Berechtigung...");
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            log("Erlaubt! Suche Service Worker...");
+            document.getElementById('push-enable-btn').style.display = 'none';
+            try {
+                // KORREKTUR: Dynamischer Pfad für GitHub Pages Repos
+                const swPath = getSWPath();
+                log("Registriere SW unter: " + swPath);
+                
+                const reg = await navigator.serviceWorker.register(swPath, { scope: './' });
+                log("SW registriert! Scope: " + reg.scope);
+                
+                const token = await getToken(messaging, { 
+                    vapidKey: VAPID_KEY, 
+                    serviceWorkerRegistration: reg 
+                });
+                
+                if(token) {
+                    log("Token da! Speichere...");
+                    await setDoc(doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'alertJobs', currentUser.uid), { 
+                        fcmToken: token 
+                    }, { merge: true });
+                    log("✅ Token gespeichert!");
+                } else {
+                    log("Kein Token bekommen.");
+                }
+            } catch (e) {
+                log("FEHLER SW/Token: " + e.message);
+                alert("Fehler: " + e.message);
+            }
+        } else {
+            alert("Push abgelehnt.");
+        }
+    };
+
+    // BUTTON 2: Test anfordern
     window.requestPushTest = async () => {
-        const btn = document.getElementById('push-test-btn');
         if (!currentUser) return alert("Warte auf Login...");
-        
+        const btn = document.getElementById('push-test-btn');
         btn.disabled = true;
-        btn.innerText = "1. Token holen...";
-        log("Hole Token...");
+        btn.innerText = "⏳ Prüfe...";
+        log("Starte Test...");
 
         try {
-            if (Notification.permission !== 'granted') throw new Error("Benachrichtigung nicht erlaubt!");
+            // SW Check mit Korrekturpfad
+            let reg = await navigator.serviceWorker.getRegistration();
+            if(!reg) {
+                log("SW fehlt, registriere nach...");
+                reg = await navigator.serviceWorker.register(getSWPath(), { scope: './' });
+            }
 
-            // 1. Token holen
-            const token = await getToken(messaging, { vapidKey: VAPID_KEY });
-            if (!token) throw new Error("Kein Token erhalten!");
+            const token = await getToken(messaging, { 
+                vapidKey: VAPID_KEY,
+                serviceWorkerRegistration: reg
+            });
+
+            if (!token) throw new Error("Kein Token. Klicke erst 'Push aktivieren'.");
             
-            log("Token OK: " + token.substring(0,10));
-            btn.innerText = "2. Speichern...";
+            log("Token OK. Sende an Server...");
+            btn.innerText = "💾 Speichere...";
 
-            // 2. In DB schreiben
-            const jobRef = doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'alertJobs', currentUser.uid);
-            await setDoc(jobRef, { 
+            await setDoc(doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'alertJobs', currentUser.uid), { 
                 fcmToken: token, 
                 testRequested: true,
                 lastUpdate: Date.now()
             }, { merge: true });
 
-            log("Gespeichert! Warte auf GitHub...");
-            btn.innerText = "✅ Gesendet! (GitHub starten)";
+            log("✅ Gespeichert! Starte jetzt GitHub Action.");
+            btn.innerText = "✅ Fertig (GitHub starten)";
             
             setTimeout(() => { btn.disabled = false; btn.innerText = "🚀 Cloud Push-Test anfordern"; }, 5000);
 
         } catch (err) {
             log("FEHLER: " + err.message);
-            alert("FEHLER: " + err.message);
             btn.disabled = false;
             btn.innerText = "❌ Fehler";
-        }
-    };
-
-    // Push Aktivieren Button
-    document.getElementById('push-enable-btn').onclick = async () => {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-            document.getElementById('push-enable-btn').style.display = 'none';
-            log("Erlaubnis erteilt. Klicke Test!");
-        } else {
-            alert("Benachrichtigungen abgelehnt!");
         }
     };
 </script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // App Logik
     const QT_URL = "https://queue-times.com/parks/51/queue_times.json";
     const RIDE_PROPS = { "WODAN - Timburcoaster": {best:35}, "blue fire Megacoaster": {best:30}, "Silver Star": {best:25}, "Arthur": {best:35}, "Voletarium": {best:25}, "Euro-Mir": {best:25}, "Piraten in Batavia": {best:15}, "Eurosat - CanCan Coaster": {best:25} };
     const PROXIES = [ { url: u => `https://corsproxy.io/?${encodeURIComponent(u)}` }, { url: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, wrap: true } ];
@@ -222,7 +261,7 @@
     }
 
     async function refresh(manual = false) {
-        if (manual) document.getElementById('refresh-svg').classList.add('spinning');
+        if (manual) document.getElementById('refresh-btn').classList.add('spinning');
         for (let p of PROXIES) {
             try {
                 const resp = await fetch(p.url(QT_URL + "?cb=" + Date.now()), { signal: AbortSignal.timeout(6000) });
@@ -237,7 +276,7 @@
                 }
             } catch (e) { console.log("Proxy Fail"); }
         }
-        document.getElementById('refresh-svg').classList.remove('spinning');
+        document.getElementById('refresh-btn').classList.remove('spinning');
     }
 
     window.renderList = () => {
@@ -261,11 +300,8 @@
         for (let l in parkData) {
             parkData[l].forEach(r => {
                 if (selectedIds.length > 0 && !selectedIds.includes(r.id)) return;
-                // Fallback Koords für Demo
-                const lat = r.props.lat || 48.266;
-                const lon = r.props.lon || 7.721;
                 const icon = L.divIcon({ className: 'custom-icon', html: `<div class="ride-marker" style="background:${r.is_open ? (r.wait_time > 30 ? 'var(--up)' : 'var(--down)') : '#444'}">${r.is_open ? r.wait_time : '✕'}</div>`, iconSize: [34, 34] });
-                rideMarkers.push(L.marker([lat, lon], {icon}).addTo(map).bindPopup(r.name));
+                rideMarkers.push(L.marker([48.266, 7.721], {icon}).addTo(map).bindPopup(r.name));
             });
         }
         updateUserOnMap();
@@ -304,20 +340,16 @@
         const list = document.getElementById('settings-list'); list.innerHTML = "";
         let flat = []; for(let l in parkData) flat = [...flat, ...parkData[l]];
         flat.sort((a,b)=>a.name.localeCompare(b.name)).forEach(r => {
-            list.innerHTML += `<div class="settings-item"><span>${r.name}</span><input type="checkbox" style="width:22px; height:22px" ${selectedIds.includes(r.id)?'checked':''} onchange="toggleFav(${r.id})"></div>`;
+            list.innerHTML += `<div class="settings-item"><span>${r.name}</span><input type="checkbox" ${selectedIds.includes(r.id)?'checked':''} onchange="toggleFav(${r.id})"></div>`;
         });
     };
     function manualRefresh() { refresh(true); }
     function resetMap() { if(map) map.flyTo(userPos ? [userPos.lat, userPos.lon] : [48.266, 7.721], 17); }
-    function showToast(m) { const t=document.getElementById('toast'); t.innerText=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); }
+    function showToast(m, bg) { const t=document.getElementById('toast'); t.innerText=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); }
     function testNotification() { if ("vibrate" in navigator) navigator.vibrate([400, 100, 400]); showToast("Vibration ok!"); }
 
     refresh();
     setInterval(refresh, 90000);
-
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('firebase-messaging-sw.js').then(reg => console.log("SW registriert"));
-    }
 </script>
 </body>
 </html>
