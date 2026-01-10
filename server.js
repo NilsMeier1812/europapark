@@ -33,10 +33,10 @@ async function runCheck() {
         });
 
         // 2. Rolling History Update
-        // Wir laden das einzige History-Dokument
+        // KORREKTUR: Wir zielen jetzt auf ein KONKRETES Dokument ('main')
         const historyRef = db.collection('artifacts').doc(appId)
             .collection('public').doc('data')
-            .collection('history_rolling');
+            .collection('history_rolling').doc('main');
 
         const historySnap = await historyRef.get();
         let points = [];
@@ -86,9 +86,6 @@ async function runCheck() {
                     const currentRide = allRides[rideId];
 
                     if (currentRide && currentRide.is_open && currentRide.wait_time <= threshold) {
-                        // Optional: Hier könnte man prüfen, ob der User VORHER schon alarmiert wurde
-                        // um Spam zu vermeiden (z.B. lastAlertTime im User-Doc speichern)
-                        
                         messages.push({
                             notification: {
                                 title: `🎯 ${currentRide.name}`,
