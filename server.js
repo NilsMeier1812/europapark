@@ -1,11 +1,7 @@
-/**
- * Aktualisiertes Server-Skript für GitHub Actions.
- * Unterstützt nun einen manuellen Push-Test über die App.
- */
-
 const admin = require('firebase-admin');
 const axios = require('axios');
 
+// Firebase Admin Initialisierung
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 if (!admin.apps.length) {
@@ -18,87 +14,75 @@ const db = admin.firestore();
 const appId = "ep-pro-strategie"; 
 
 async function runCheck() {
-    console.log("Starte Lauf...");
+    console.log("--- DIAGNOSE LAUF START ---");
+    console.log("Suche in App-ID:", appId);
+    
     try {
-        // 1. Daten vom Europa-Park holen
-        const response = await axios.get("https://queue-times.com/parks/51/queue_times.json");
-        const lands = response.data.lands;
-        const allRides = {};
-        lands.forEach(land => land.rides.forEach(ride => { allRides[ride.id] = ride; }));
+        // 1. Pfad-Check: Wir listen mal alle Dokumente im alertJobs Ordner auf
+        // Wir probieren den Pfad absolut anzusprechen
+        const jobsPath = `artifacts/${appId}/public/data/alertJobs`;
+        console.log("Prüfe Pfad:", jobsPath);
+        
+        const jobsSnapshot = await db.collection('artifacts')
+            .doc(appId)
+            .collection('public')
+            .doc('data')
+            .collection('alertJobs')
+            .get();
 
-        // 2. Alle Jobs aus Firestore laden
-        const jobsSnapshot = await db.collection('artifacts').doc(appId)
-            .collection('public').doc('data')
-            .collection('alertJobs').get();
+        console.log(`Anzahl gefundener User-Dokumente: ${jobsSnapshot.size}`);
 
         if (jobsSnapshot.empty) {
-            console.log("Keine Jobs gefunden.");
+            console.log("❌ FEHLER: Keine Dokumente unter diesem Pfad gefunden!");
+            console.log("Bitte prüfe in der Firebase Console, ob der Pfad exakt so aussieht:");
+            console.log("artifacts -> ep-pro-strategie -> public -> data -> alertJobs");
             return;
         }
 
         const messages = [];
-        const jobsToUpdate = [];
+        const updates = [];
 
         jobsSnapshot.forEach((docSnap) => {
             const job = docSnap.data();
             const userId = docSnap.id;
-            const fcmToken = job.fcmToken;
+            console.log(`Prüfe User: ${userId}`);
+            console.log(`- Token vorhanden: ${!!job.fcmToken}`);
+            console.log(`- testRequested: ${job.testRequested}`);
 
-            if (!fcmToken) return;
-
-            let sendNow = false;
-            let messageBody = "";
-
-            // PRÜFUNG 1: Manueller Test-Request
-            if (job.testRequested === true) {
-                console.log(`Manueller Test-Push für User ${userId} angefordert.`);
-                sendNow = true;
-                messageBody = "🚀 Verbindungstest erfolgreich! Dein Handy empfängt Nachrichten vom GitHub-Server.";
-                // Flag zurücksetzen
-                jobsToUpdate.push({ id: userId, data: { testRequested: false } });
-            }
-
-            // PRÜFUNG 2: Wartezeiten (Normaler Betrieb)
-            if (job.active && job.alerts) {
-                job.alerts.forEach(rideId => {
-                    const currentRide = allRides[rideId];
-                    if (currentRide && currentRide.is_open && currentRide.wait_time <= 20) {
-                        sendNow = true;
-                        messageBody = `🎢 ${currentRide.name} hat nur noch ${currentRide.wait_time} min Wartezeit!`;
-                    }
-                });
-            }
-
-            if (sendNow && messageBody) {
+            // Test-Logik
+            if (job.testRequested === true && job.fcmToken) {
+                console.log(`✅ TEST-TREFFER für ${userId}! Bereite Nachricht vor...`);
                 messages.push({
                     notification: {
-                        title: 'EP Strategie',
-                        body: messageBody
+                        title: 'EP Strategie: Verbindung steht! 🚀',
+                        body: 'Dein Server-Check funktioniert. Die Rakete ist gelandet!'
                     },
-                    token: fcmToken
+                    token: job.fcmToken
                 });
+                updates.push({ id: userId, ref: docSnap.ref });
             }
         });
 
-        // 3. Nachrichten senden
+        // 2. Nachrichten senden
         if (messages.length > 0) {
-            console.log(`Sende ${messages.length} Nachricht(en)...`);
-            await admin.messaging().sendEach(messages);
+            console.log(`Sende ${messages.length} Nachricht(en) via FCM...`);
+            const response = await admin.messaging().sendEach(messages);
+            console.log("FCM Antwort:", JSON.stringify(response));
+            
+            // 3. Flags zurücksetzen
+            for (const item of updates) {
+                await item.ref.update({ testRequested: false });
+                console.log(`Flag für ${item.id} auf false gesetzt.`);
+            }
+        } else {
+            console.log("Keine Nachrichten zu versenden.");
         }
-
-        // 4. Firestore-Status aktualisieren (Test-Flags zurücksetzen)
-        for (const update of jobsToUpdate) {
-            await db.collection('artifacts').doc(appId)
-                .collection('public').doc('data')
-                .collection('alertJobs').doc(update.id).update(update.data);
-        }
-
-        console.log("Lauf erfolgreich beendet.");
 
     } catch (error) {
-        console.error("Fehler im Skript:", error);
+        console.error("KRITISCHER SKRIPT-FEHLER:", error);
         process.exit(1);
     }
+    console.log("--- DIAGNOSE LAUF ENDE ---");
 }
 
 runCheck();
