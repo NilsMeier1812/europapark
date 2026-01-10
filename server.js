@@ -1,7 +1,6 @@
 const admin = require('firebase-admin');
 const axios = require('axios');
 
-// Secret muss in GitHub Settings sein
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 if (!admin.apps.length) {
@@ -14,65 +13,84 @@ const db = admin.firestore();
 const appId = "ep-pro-strategie"; 
 
 async function runCheck() {
-    console.log("--- SERVER LAUF START ---");
+    console.log("--- START CHECK ---");
     
     try {
-        // Holen wir die Daten aus /alertJobs
-        const jobsSnapshot = await db.collection('artifacts')
-            .doc(appId)
-            .collection('public')
-            .doc('data')
-            .collection('alertJobs')
-            .get();
+        // 1. Live Daten
+        const response = await axios.get("https://queue-times.com/parks/51/queue_times.json");
+        const lands = response.data.lands;
+        const allRides = {};
+        lands.forEach(land => land.rides.forEach(ride => { allRides[ride.id] = ride; }));
 
-        if (jobsSnapshot.empty) {
-            console.log("WARNUNG: Keine Jobs gefunden. Datenbank leer oder Pfad falsch?");
-            return;
-        }
+        // 2. Jobs
+        const jobsSnapshot = await db.collection('artifacts').doc(appId)
+            .collection('public').doc('data')
+            .collection('alertJobs').get();
 
         const messages = [];
         const updates = [];
 
         jobsSnapshot.forEach((docSnap) => {
-            const data = docSnap.data();
+            const job = docSnap.data();
             const userId = docSnap.id;
-            
-            // DIAGNOSE
-            if (data.testRequested) {
-                console.log(`[TEST] User ${userId} will Test.`);
-                if (data.fcmToken) {
-                    console.log(`       ✅ Token gefunden! Sende Nachricht.`);
-                    messages.push({
-                        notification: {
-                            title: 'Verbindung erfolgreich! 🚀',
-                            body: 'Dein Server-Setup ist perfekt. Viel Spaß im Park!'
-                        },
-                        token: data.fcmToken
-                    });
-                    updates.push(docSnap.ref);
-                } else {
-                    console.log(`       ❌ FEHLER: Kein Token im Dokument.`);
-                }
+            const fcmToken = job.fcmToken;
+
+            if (!fcmToken) return;
+
+            // Manueller Verbindungstest
+            if (job.testRequested) {
+                messages.push({
+                    notification: { title: 'Verbindung OK! 🚀', body: 'Deine Custom-Alarme sind jetzt aktiv.' },
+                    token: fcmToken
+                });
+                updates.push({ ref: docSnap.ref, data: { testRequested: false } });
+            }
+
+            // ECHTE PRÜFUNG
+            // job.alerts ist jetzt ein Objekt: { "123": 20, "456": 15 }
+            if (job.alerts && typeof job.alerts === 'object') {
+                
+                Object.keys(job.alerts).forEach(rideId => {
+                    const threshold = job.alerts[rideId];
+                    const currentRide = allRides[rideId];
+
+                    if (currentRide && currentRide.is_open) {
+                        // Logik: Ist Wartezeit kleiner/gleich Schwellwert?
+                        if (currentRide.wait_time <= threshold) {
+                            
+                            // Spam-Schutz: Wir könnten hier prüfen, ob wir schon benachrichtigt haben
+                            // Fürs erste senden wir einfach (GitHub läuft ja nur alle 5-10 min)
+                            
+                            console.log(`ALARM ${userId}: ${currentRide.name} (${currentRide.wait_time} min <= ${threshold})`);
+                            
+                            messages.push({
+                                notification: {
+                                    title: `🎯 ${currentRide.name}`,
+                                    body: `Wartezeit nur ${currentRide.wait_time} min (Dein Limit: ${threshold} min)!`
+                                },
+                                token: fcmToken
+                            });
+                        }
+                    }
+                });
             }
         });
 
         if (messages.length > 0) {
-            console.log(`Sende ${messages.length} Nachrichten an FCM...`);
-            const response = await admin.messaging().sendEach(messages);
-            console.log("FCM Antwort:", response.successCount + " gesendet.");
-            
-            for (const ref of updates) {
-                await ref.update({ testRequested: false });
-            }
-        } else {
-            console.log("Nichts zu tun.");
+            console.log(`Sende ${messages.length} Nachrichten...`);
+            await admin.messaging().sendEach(messages);
+        }
+
+        // Clean up
+        for (const up of updates) {
+            await up.ref.update(up.data);
         }
 
     } catch (error) {
-        console.error("CRASH:", error);
+        console.error("ERROR:", error);
         process.exit(1);
     }
-    console.log("--- SERVER LAUF ENDE ---");
+    console.log("--- ENDE CHECK ---");
 }
 
 runCheck();
