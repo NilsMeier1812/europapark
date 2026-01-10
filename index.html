@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EP Strategie</title>
+    <title>EP Strategie Ultra (Diagnose)</title>
     
-    <!-- PWA & Mobile Meta Tags -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b1120">
     <link rel="icon" href="https://fav.farm/🎢">
@@ -13,158 +12,45 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <!-- Leaflet.js für die Karte -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <style>
-        :root {
-            --bg: #0b1120;
-            --card-bg: rgba(30, 41, 59, 0.8);
-            --accent: #38bdf8;
-            --text-main: #f8fafc;
-            --text-dim: #94a3b8;
-            --up: #ef4444;
-            --down: #22c55e;
-            --gold: #fbbf24;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
-            margin: 0; padding: 0;
-            overflow: hidden;
-            user-select: none;
-        }
-
-        /* Header Bereich */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 15px;
-            height: 75px;
-            background: rgba(11, 17, 32, 0.9);
-            backdrop-filter: blur(15px);
-            z-index: 1000;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            box-sizing: border-box;
-        }
-
+        :root { --bg: #0b1120; --card-bg: rgba(30, 41, 59, 0.95); --accent: #38bdf8; --text-main: #f8fafc; --text-dim: #94a3b8; --up: #ef4444; --down: #22c55e; --gold: #fbbf24; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 0; overflow: hidden; user-select: none; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; height: 75px; background: rgba(11, 17, 32, 0.95); z-index: 1000; border-bottom: 1px solid rgba(255, 255, 255, 0.1); box-sizing: border-box; }
         .sync-info { text-align: center; flex: 1; }
         #last-sync-time { font-size: 0.55em; color: var(--text-dim); text-transform: uppercase; }
-        #proxy-label { font-size: 0.5em; display: block; margin-top: 2px; font-weight: bold; }
-        #park-name { font-size: 0.9em; font-weight: 900; letter-spacing: -0.5px; }
-
-        .toggle-group {
-            display: flex;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 3px;
-            margin: 0 10px;
-        }
-
-        .toggle-btn {
-            border: none;
-            background: none;
-            color: var(--text-dim);
-            padding: 8px 12px;
-            font-size: 0.8em;
-            font-weight: 700;
-            border-radius: 10px;
-            cursor: pointer;
-        }
-
+        #park-name { font-size: 0.9em; font-weight: 900; }
+        .toggle-group { display: flex; background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 3px; margin: 0 10px; }
+        .toggle-btn { border: none; background: none; color: var(--text-dim); padding: 8px 12px; font-size: 0.8em; font-weight: 700; border-radius: 10px; }
         .toggle-btn.active { background: var(--accent); color: white; }
-
-        .btn-icon {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            width: 42px;
-            height: 42px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: white;
-        }
-
-        /* Views */
-        #list-view {
-            padding: 15px;
-            height: calc(100vh - 75px);
-            overflow-y: auto;
-            box-sizing: border-box;
-        }
-
-        #map-view {
-            width: 100vw;
-            height: calc(100vh - 75px);
-            display: none;
-            position: relative;
-        }
-
-        .map-overlay-btn {
-            position: absolute;
-            right: 20px;
-            bottom: 30px;
-            z-index: 1001;
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 55px;
-            height: 55px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5em;
-            cursor: pointer;
-        }
-
-        /* Cards */
-        .land-section { margin-top: 20px; }
-        .land-title { font-size: 0.75em; font-weight: 800; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; border-left: 4px solid var(--accent); padding-left: 10px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
-        .card { background: var(--card-bg); border-radius: 20px; padding: 16px; border: 1px solid rgba(255, 255, 255, 0.05); position: relative; backdrop-filter: blur(10px); }
-        
-        .alert-toggle { position: absolute; top: 15px; right: 15px; font-size: 1.3em; cursor: pointer; opacity: 0.2; }
+        .btn-icon { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; color: white; }
+        #list-view { padding: 15px; height: calc(100vh - 75px); overflow-y: auto; }
+        #map-view { width: 100vw; height: calc(100vh - 75px); display: none; }
+        .map-overlay-btn { position: absolute; right: 20px; bottom: 30px; z-index: 1001; background: var(--accent); color: white; border: none; border-radius: 50%; width: 55px; height: 55px; font-size: 1.5em; display: flex; align-items: center; justify-content: center; }
+        .card { background: var(--card-bg); border-radius: 20px; padding: 16px; position: relative; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .alert-toggle { position: absolute; top: 15px; right: 15px; font-size: 1.3em; opacity: 0.2; }
         .alert-toggle.enabled { opacity: 1; color: var(--gold); }
-
-        .ride-name { font-size: 0.85em; font-weight: 600; min-height: 2.8em; margin-bottom: 8px; padding-right: 25px; line-height: 1.3; }
+        .ride-name { font-size: 0.85em; font-weight: 600; min-height: 2.8em; margin-bottom: 8px; padding-right: 25px; }
         .wait-time { font-size: 2.3em; font-weight: 900; }
-        .unit { font-size: 0.4em; color: var(--text-dim); margin-left: 2px; }
-
-        /* Badges */
-        .badge { font-size: 0.6em; font-weight: 800; padding: 3px 7px; border-radius: 6px; text-transform: uppercase; margin-bottom: 8px; display: inline-block; }
-        .badge-sr { background: #6366f1; color: white; margin-right: 5px; }
-        .badge-deal { background: var(--gold); color: #000; }
-        .dist-tag { font-size: 0.6em; color: var(--accent); margin-top: 5px; }
-
         .ride-marker { width: 34px; height: 34px; border-radius: 50%; border: 2.5px solid white; color: white; font-weight: 900; font-size: 13px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-
-        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent); color: white; padding: 12px 25px; border-radius: 15px; font-size: 0.85em; z-index: 5000; transition: transform 0.4s; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent); color: white; padding: 12px 25px; border-radius: 15px; font-size: 0.85em; z-index: 5000; transition: transform 0.4s; }
         #toast.show { transform: translateX(-50%) translateY(0); }
-
         #settings-modal { display: none; position: fixed; inset: 0; background: #000; z-index: 3000; padding: 25px; overflow-y: auto; }
         .settings-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #1e293b; }
-        
         .spinning { animation: rotate 0.8s linear infinite; }
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-<div id="toast">Synchronisiert!</div>
+<div id="toast">App geladen!</div>
 
 <header>
     <button class="btn-icon" onclick="openSettings()">⚙️</button>
     <div class="sync-info">
         <div id="park-name">EUROPA-PARK</div>
         <div id="last-sync-time">Warte...</div>
-        <span id="proxy-label" style="font-size:0.5em;">Multi-Proxy</span>
     </div>
     <div class="toggle-group">
         <button id="btn-list" class="toggle-btn active" onclick="switchView('list')">Liste</button>
@@ -191,19 +77,17 @@
     <div id="settings-list"></div>
     
     <hr style="border:0; border-top:1px solid #222; margin: 25px 0;">
-    <button class="btn-icon" style="width:100%; background:var(--accent); height:50px; font-weight:bold; margin-bottom:10px;" onclick="testNotification()">📳 Lokaler Vibrationstest</button>
     <button id="push-test-btn" class="btn-icon" style="width:100%; background:var(--gold); color:black; height:50px; font-weight:bold;" onclick="requestPushTest()">🚀 Cloud Push-Test anfordern</button>
-    <p id="push-test-info" style="font-size:0.65em; color:var(--text-dim); text-align:center; margin-top:10px;">Sendet den Token erneut an den Server & startet Test.</p>
+    <p id="debug-log" style="font-size:0.65em; color:var(--up); font-family:monospace; margin-top:10px; white-space: pre-wrap;">Log:</p>
 </div>
 
-<!-- Firebase & Push Module -->
 <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
     import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
     import { getMessaging, getToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js';
 
-    // --- DEINE FIREBASE KONFIGURATION ---
+    // DEINE ECHTEN API KEYS
     const firebaseConfig = {
       apiKey: "AIzaSyAf4nF5XItLd6CC3sdQ_ePEYduaSTdXjGI",
       authDomain: "ep-pro-c768d.firebaseapp.com",
@@ -215,8 +99,9 @@
     };
 
     const VAPID_KEY = "BFp2JrM56fRBkdVd6izSz7slAIP513-LhE3LgV049a8-9QVxzpIUjsqFU6bgNTQOjFPZR8yXfYymRGad0IbvPKo";
-    const appId = 'ep-pro-strategie';
-    
+    const APP_ID_PATH = 'ep-pro-strategie';
+
+    // Init
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
@@ -224,19 +109,26 @@
 
     let currentUser = null;
 
-    signInAnonymously(auth).catch(err => console.error("Auth Fehler:", err));
+    function log(msg) {
+        console.log(msg);
+        const logEl = document.getElementById('debug-log');
+        logEl.innerText = msg + "\n" + logEl.innerText.substring(0, 200);
+    }
+
+    log("Starte Auth...");
+    signInAnonymously(auth).catch(err => log("AUTH FEHLER: " + err.message));
 
     onAuthStateChanged(auth, (user) => {
-        currentUser = user;
         if (user) {
-            console.log("Logged in:", user.uid);
+            currentUser = user;
+            log("Eingeloggt: " + user.uid.substring(0,5)+"...");
             if (Notification.permission !== 'granted') {
                 document.getElementById('push-enable-btn').style.display = 'block';
             }
-            const alertRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'alerts');
-            onSnapshot(alertRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    window.enabledAlerts = docSnap.data().active || [];
+            // Load Settings
+            onSnapshot(doc(db, 'artifacts', APP_ID_PATH, 'users', user.uid, 'settings', 'alerts'), (snap) => {
+                if (snap.exists()) {
+                    window.enabledAlerts = snap.data().active || [];
                     localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts));
                     if(window.renderList) window.renderList();
                 }
@@ -244,129 +136,76 @@
         }
     });
 
+    // Cloud Sync
     window.syncAlertsToCloud = async (alerts) => {
         if (!currentUser) return;
-        const jobRef = doc(db, 'artifacts', appId, 'public', 'data', 'alertJobs', currentUser.uid);
-        await setDoc(jobRef, { userId: currentUser.uid, alerts: alerts, active: alerts.length > 0 }, { merge: true });
+        await setDoc(doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'alertJobs', currentUser.uid), { 
+            userId: currentUser.uid, alerts: alerts, active: alerts.length > 0 
+        }, { merge: true });
     };
 
-    // NEU: Holt Token UND setzt Flag in einem Aufwasch
+    // TEST BUTTON LOGIK
     window.requestPushTest = async () => {
-        if (!currentUser) return alert("Noch nicht eingeloggt.");
         const btn = document.getElementById('push-test-btn');
-        btn.innerText = "⏳ Sende Daten...";
+        if (!currentUser) return alert("Warte auf Login...");
+        
         btn.disabled = true;
+        btn.innerText = "1. Token holen...";
+        log("Hole Token...");
 
         try {
-            // 1. Token neu abrufen
-            let currentToken = null;
-            if (Notification.permission === 'granted') {
-                currentToken = await getToken(messaging, { vapidKey: VAPID_KEY });
-            }
+            if (Notification.permission !== 'granted') throw new Error("Benachrichtigung nicht erlaubt!");
 
-            if (!currentToken) {
-                alert("Kein Push-Token erhalten! Bitte 'Push-Nachrichten aktivieren' klicken.");
-                btn.innerText = "❌ Fehler";
-                btn.disabled = false;
-                return;
-            }
+            // 1. Token holen
+            const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+            if (!token) throw new Error("Kein Token erhalten!");
+            
+            log("Token OK: " + token.substring(0,10));
+            btn.innerText = "2. Speichern...";
 
-            // 2. Alles zusammen speichern
-            const jobRef = doc(db, 'artifacts', appId, 'public', 'data', 'alertJobs', currentUser.uid);
+            // 2. In DB schreiben
+            const jobRef = doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'alertJobs', currentUser.uid);
             await setDoc(jobRef, { 
-                fcmToken: currentToken, 
+                fcmToken: token, 
                 testRequested: true,
                 lastUpdate: Date.now()
             }, { merge: true });
 
-            showToast("Test angefordert & Token gespeichert!");
-            btn.innerText = "✅ Warten auf GitHub...";
+            log("Gespeichert! Warte auf GitHub...");
+            btn.innerText = "✅ Gesendet! (GitHub starten)";
             
-            setTimeout(() => {
-                btn.innerText = "🚀 Cloud Push-Test anfordern";
-                btn.disabled = false;
-            }, 5000);
+            setTimeout(() => { btn.disabled = false; btn.innerText = "🚀 Cloud Push-Test anfordern"; }, 5000);
 
         } catch (err) {
-            console.error(err);
-            alert("Fehler beim Speichern: " + err.message);
-            btn.innerText = "❌ Error";
+            log("FEHLER: " + err.message);
+            alert("FEHLER: " + err.message);
             btn.disabled = false;
+            btn.innerText = "❌ Fehler";
         }
     };
 
+    // Push Aktivieren Button
     document.getElementById('push-enable-btn').onclick = async () => {
-        try {
-            const permission = await Notification.requestPermission();
-            if (permission !== 'granted') return alert("Bitte Benachrichtigungen erlauben.");
-            const token = await getToken(messaging, { vapidKey: VAPID_KEY });
-            if (token && currentUser) {
-                const jobRef = doc(db, 'artifacts', appId, 'public', 'data', 'alertJobs', currentUser.uid);
-                await setDoc(jobRef, { fcmToken: token }, { merge: true });
-                showToast("Push ist jetzt aktiv!");
-                document.getElementById('push-enable-btn').style.display = 'none';
-            }
-        } catch (err) { console.error("Push Fehler:", err); }
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            document.getElementById('push-enable-btn').style.display = 'none';
+            log("Erlaubnis erteilt. Klicke Test!");
+        } else {
+            alert("Benachrichtigungen abgelehnt!");
+        }
     };
 </script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script>
+    // App Logik
     const QT_URL = "https://queue-times.com/parks/51/queue_times.json";
-    const CENTER = [48.266, 7.721];
-    const PROXIES = [
-        { name: "Cloud-B (Fast)", url: u => `https://corsproxy.io/?${encodeURIComponent(u)}`, wrap: false },
-        { name: "Cloud-A", url: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, wrap: true }
-    ];
-
-    // VOLLSTÄNDIGE RIDE LISTE
-    const RIDE_PROPS = {
-        "WODAN - Timburcoaster": { sr: true, lat: 48.2625, lon: 7.7183, best: 35 },
-        "blue fire Megacoaster": { sr: true, lat: 48.2618, lon: 7.7205, best: 30 },
-        "Silver Star": { sr: true, lat: 48.2691, lon: 7.7218, best: 25 },
-        "Arthur": { sr: true, lat: 48.2675, lon: 7.7166, best: 35 },
-        "Voletarium": { sr: true, lat: 48.2690, lon: 7.7235, best: 25 },
-        "Euro-Mir": { sr: true, lat: 48.2655, lon: 7.7210, best: 25 },
-        "Piraten in Batavia": { sr: false, lat: 48.2665, lon: 7.7202, best: 15 },
-        "Eurosat - CanCan Coaster": { sr: false, lat: 48.2673, lon: 7.7213, best: 25 },
-        "Eurosat Coastiality": { lat: 48.2672, lon: 7.7210, best: 30 },
-        "Matterhorn-Blitz": { sr: false, lat: 48.2663, lon: 7.7218, best: 35 },
-        "Schweizer Bobbahn": { sr: false, lat: 48.2660, lon: 7.7222, best: 20 },
-        "Tiroler Wildwasserbahn": { sr: false, lat: 48.2651, lon: 7.7235, best: 25 },
-        "Alpenexpress Enzian": { sr: false, lat: 48.2648, lon: 7.7232, best: 15 },
-        "Poseidon": { sr: false, lat: 48.2645, lon: 7.7215, best: 25 },
-        "Atlantica SuperSplash": { sr: false, lat: 48.2610, lon: 7.7215, best: 20 },
-        "Pegasus - Die YoungStar Achterbahn": { lat: 48.2642, lon: 7.7210, best: 15 },
-        "Fluch der Kassandra": { lat: 48.2640, lon: 7.7205, best: 5 },
-        "Abenteuer Atlantis": { lat: 48.2638, lon: 7.7215, best: 15 },
-        "Snorri Touren": { sr: false, lat: 48.2662, lon: 7.7195, best: 20 },
-        "Fjord-Rafting": { sr: false, lat: 48.2655, lon: 7.7185, best: 30 },
-        "Vindjammer": { lat: 48.2660, lon: 7.7190, best: 10 },
-        "Geisterschloss": { lat: 48.2685, lon: 7.7230, best: 10 },
-        "Piccolo Mondo": { lat: 48.2688, lon: 7.7232, best: 5 },
-        "Volo da Vinci": { lat: 48.2682, lon: 7.7238, best: 20 },
-        "Euro-Tower": { lat: 48.2668, lon: 7.7215, best: 10 },
-        "Jungfrau-Gletscherflieger": { lat: 48.2658, lon: 7.7225, best: 10 },
-        "Wiener Wellenflieger": { lat: 48.2655, lon: 7.7230, best: 10 },
-        "Feria Swing": { lat: 48.2625, lon: 7.7235, best: 5 },
-        "Koffiekopjes": { lat: 48.2675, lon: 7.7195, best: 10 }
-    };
+    const RIDE_PROPS = { "WODAN - Timburcoaster": {best:35}, "blue fire Megacoaster": {best:30}, "Silver Star": {best:25}, "Arthur": {best:35}, "Voletarium": {best:25}, "Euro-Mir": {best:25}, "Piraten in Batavia": {best:15}, "Eurosat - CanCan Coaster": {best:25} };
+    const PROXIES = [ { url: u => `https://corsproxy.io/?${encodeURIComponent(u)}` }, { url: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, wrap: true } ];
 
     window.enabledAlerts = JSON.parse(localStorage.getItem('ep_alerts')) || [];
-    let parkData = {};
-    let selectedIds = JSON.parse(localStorage.getItem('ep_favs')) || [];
-    let userPos = null;
-    let lastSync = 0;
-    let map, rideMarkers = [], userMarker;
-
-    // Funktion zum Finden von Ride-Props (auch bei leicht anderen Namen)
-    function findProps(name) {
-        if (RIDE_PROPS[name]) return RIDE_PROPS[name];
-        const keys = Object.keys(RIDE_PROPS);
-        for (let k of keys) { if (name.includes(k) || k.includes(name)) return RIDE_PROPS[k]; }
-        return { lat: 48.266, lon: 7.721, best: 10, isFallback: true };
-    }
+    let parkData = {}, selectedIds = JSON.parse(localStorage.getItem('ep_favs')) || [];
+    let userPos = null, map, rideMarkers = [], userMarker;
 
     if (navigator.geolocation) {
         navigator.geolocation.watchPosition(pos => {
@@ -378,37 +217,25 @@
 
     function updateUserOnMap() {
         if (!map || !userPos) return;
-        if (!userMarker) {
-            userMarker = L.circleMarker([userPos.lat, userPos.lon], { 
-                radius: 9, color: '#fff', weight: 2, fillColor: '#38bdf8', fillOpacity: 1 
-            }).addTo(map).bindPopup("Dein Standort");
-        } else {
-            userMarker.setLatLng([userPos.lat, userPos.lon]);
-        }
+        if (!userMarker) userMarker = L.circleMarker([userPos.lat, userPos.lon], { radius: 9, color: '#fff', weight: 2, fillColor: '#38bdf8', fillOpacity: 1 }).addTo(map);
+        else userMarker.setLatLng([userPos.lat, userPos.lon]);
     }
 
     async function refresh(manual = false) {
         if (manual) document.getElementById('refresh-svg').classList.add('spinning');
-        const label = document.getElementById('proxy-label');
         for (let p of PROXIES) {
             try {
-                const resp = await fetch(p.url(QT_URL + "?cb=" + Date.now()), { signal: AbortSignal.timeout(7000) });
+                const resp = await fetch(p.url(QT_URL + "?cb=" + Date.now()), { signal: AbortSignal.timeout(6000) });
                 let data = p.wrap ? JSON.parse((await resp.json()).contents) : await resp.json();
                 if (data && data.lands) {
                     parkData = {};
-                    data.lands.forEach(l => {
-                        parkData[l.name] = l.rides.map(r => ({
-                            ...r, props: findProps(r.name)
-                        }));
-                    });
-                    lastSync = Date.now();
-                    label.innerText = `Verbunden: ${p.name}`;
+                    data.lands.forEach(l => { parkData[l.name] = l.rides.map(r => ({ ...r, props: RIDE_PROPS[r.name] || { best: 10 } })); });
                     window.renderList();
                     if (map) updateMarkers();
                     if (manual) showToast("Daten aktuell!");
                     break;
                 }
-            } catch (e) { label.innerText = `${p.name} Error`; }
+            } catch (e) { console.log("Proxy Fail"); }
         }
         document.getElementById('refresh-svg').classList.remove('spinning');
     }
@@ -419,17 +246,12 @@
         for (let land in parkData) {
             const rides = parkData[land].filter(r => selectedIds.length === 0 || selectedIds.includes(r.id));
             if (rides.length === 0) continue;
-            container.innerHTML += `<div class="land-section"><div class="land-title">${land}</div><div class="grid">${rides.map(r => {
-                const isDeal = r.is_open && r.wait_time <= r.props.best;
-                const d = userPos ? calcDist(userPos.lat, userPos.lon, r.props.lat, r.props.lon) : "";
-                return `<div class="card" style="${isDeal ? 'border-color:var(--gold)' : ''}">
+            container.innerHTML += `<div class="land-section"><div class="land-title">${land}</div><div class="grid">${rides.map(r => `
+                <div class="card">
                     <div class="alert-toggle ${window.enabledAlerts.includes(r.id) ? 'enabled' : ''}" onclick="toggleAlert(${r.id})">🔔</div>
-                    <div>${r.props.sr ? '<span class="badge badge-sr">SR</span>' : ''}${isDeal ? '<span class="badge badge-deal">Deal</span>' : ''}</div>
                     <div class="ride-name">${r.name}</div>
-                    <div class="wait-time" style="color:${r.is_open ? (r.wait_time > 40 ? 'var(--up)' : 'var(--accent)') : 'var(--text-dim)'}">${r.is_open ? r.wait_time : '✕'}<span style="font-size:0.4em">MIN</span></div>
-                    ${d ? `<div class="dist-tag">📍 ${d}</div>` : ''}
-                </div>`;
-            }).join('')}</div></div>`;
+                    <div class="wait-time" style="color:${r.is_open ? (r.wait_time > 40 ? 'var(--up)' : 'var(--accent)') : 'var(--text-dim)'}">${r.is_open ? r.wait_time : '✕'}</div>
+                </div>`).join('')}</div></div>`;
         }
     }
 
@@ -439,10 +261,11 @@
         for (let l in parkData) {
             parkData[l].forEach(r => {
                 if (selectedIds.length > 0 && !selectedIds.includes(r.id)) return;
-                if (r.props.isFallback) return; // Fallbacks nicht auf Karte zeigen um Chaos zu vermeiden
-                const color = r.is_open ? (r.wait_time > 30 ? 'var(--up)' : (r.wait_time > 15 ? 'var(--accent)' : 'var(--down)')) : '#444';
-                const icon = L.divIcon({ className: 'custom-icon', html: `<div class="ride-marker" style="background:${color}; ${r.wait_time <= r.props.best ? 'border-color:var(--gold)':''}">${r.is_open ? r.wait_time : '✕'}</div>`, iconSize: [34, 34] });
-                rideMarkers.push(L.marker([r.props.lat, r.props.lon], {icon}).addTo(map).bindPopup(r.name));
+                // Fallback Koords für Demo
+                const lat = r.props.lat || 48.266;
+                const lon = r.props.lon || 7.721;
+                const icon = L.divIcon({ className: 'custom-icon', html: `<div class="ride-marker" style="background:${r.is_open ? (r.wait_time > 30 ? 'var(--up)' : 'var(--down)') : '#444'}">${r.is_open ? r.wait_time : '✕'}</div>`, iconSize: [34, 34] });
+                rideMarkers.push(L.marker([lat, lon], {icon}).addTo(map).bindPopup(r.name));
             });
         }
         updateUserOnMap();
@@ -466,22 +289,13 @@
     function switchView(v) {
         document.getElementById('list-view').style.display = v==='list'?'block':'none';
         document.getElementById('map-view').style.display = v==='map'?'block':'none';
-        document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('btn-' + v).classList.add('active');
         if (v==='map') {
             if (!map) {
-                map = L.map('map-view', {zoomControl: false}).setView(CENTER, 17);
+                map = L.map('map-view', {zoomControl: false}).setView([48.266, 7.721], 16);
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
             }
             setTimeout(() => { map.invalidateSize(); updateMarkers(); updateUserOnMap(); }, 200);
         }
-    }
-
-    function calcDist(lat1, lon1, lat2, lon2) {
-        const R = 6371; const dLat = (lat2-lat1)*Math.PI/180; const dLon = (lon2-lon1)*Math.PI/180;
-        const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-        const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return d < 1 ? Math.round(d*1000)+"m" : d.toFixed(1)+"km";
     }
 
     function openSettings() { document.getElementById('settings-modal').style.display='block'; window.renderSettings(); }
@@ -494,11 +308,10 @@
         });
     };
     function manualRefresh() { refresh(true); }
-    function resetMap() { if(map) map.flyTo(userPos ? [userPos.lat, userPos.lon] : CENTER, 17); }
-    function showToast(m, bg) { const t=document.getElementById('toast'); t.innerText=m; if(bg) t.style.background=bg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); }
+    function resetMap() { if(map) map.flyTo(userPos ? [userPos.lat, userPos.lon] : [48.266, 7.721], 17); }
+    function showToast(m) { const t=document.getElementById('toast'); t.innerText=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); }
     function testNotification() { if ("vibrate" in navigator) navigator.vibrate([400, 100, 400]); showToast("Vibration ok!"); }
 
-    setInterval(() => { if (lastSync > 0) document.getElementById('last-sync-time').innerText = "Stand: " + Math.round((Date.now()-lastSync)/1000) + "s alt"; }, 5000);
     refresh();
     setInterval(refresh, 90000);
 
