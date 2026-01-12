@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EP Strategie Ultra (Secure)</title>
+    <title>EP Pro</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b1120">
@@ -35,7 +35,6 @@
             user-select: none;
         }
 
-        /* Header Bereich */
         header {
             display: flex;
             justify-content: space-between;
@@ -88,7 +87,6 @@
             color: white;
         }
 
-        /* Views */
         #list-view {
             padding: 15px;
             height: calc(100vh - 75px);
@@ -122,14 +120,14 @@
             cursor: pointer;
         }
 
-        /* Cards */
         .land-section { margin-top: 20px; }
         .land-title { font-size: 0.75em; font-weight: 800; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; border-left: 4px solid var(--accent); padding-left: 10px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
+        
         .card { 
             background: var(--card-bg); border-radius: 20px; padding: 16px; 
             border: 1px solid rgba(255, 255, 255, 0.05); position: relative; 
-            min-height: 90px;
+            min-height: 100px; /* Etwas höher für den Graphen */
             backdrop-filter: blur(10px);
         }
         
@@ -148,12 +146,12 @@
 
         /* GRAPH STYLES */
         .history-graph {
-            position: absolute; bottom: 10px; right: 10px;
-            width: 80px; height: 40px;
-            opacity: 0.9;
+            position: absolute; bottom: 8px; right: 8px;
+            width: 100px; height: 50px;
             pointer-events: none;
         }
-        .graph-line { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)); }
+        .graph-line { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)); }
+        .graph-text { font-size: 9px; fill: var(--text-dim); font-weight: bold; }
 
         .ride-marker { width: 34px; height: 34px; border-radius: 50%; border: 2.5px solid white; color: white; font-weight: 900; font-size: 13px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 
@@ -172,7 +170,7 @@
         .save-btn { width: 100%; padding: 15px; background: var(--gold); color: black; border: none; border-radius: 12px; font-weight: bold; font-size: 1em; cursor: pointer; margin-bottom: 10px; }
         .delete-btn { width: 100%; padding: 15px; background: transparent; color: var(--up); border: 1px solid var(--up); border-radius: 12px; font-weight: bold; font-size: 1em; cursor: pointer; }
 
-        /* GitHub Config Section */
+        /* GitHub Config */
         .gh-config { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         .gh-config h3 { margin-top: 0; color: var(--accent); font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; }
 
@@ -203,7 +201,6 @@
 <div id="list-view"><div id="main-content"></div></div>
 <div id="map-view"><button class="map-overlay-btn" onclick="resetMap()">🎯</button></div>
 
-<!-- Settings Modal -->
 <div id="settings-modal" class="modal">
     <div class="modal-content">
         <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:25px;">
@@ -211,7 +208,6 @@
             <button class="btn-icon" onclick="closeSettings()">✕</button>
         </div>
         
-        <!-- GITHUB CONTROL -->
         <div class="gh-config" id="gh-config-box">
             <h3>GitHub Server Steuerung</h3>
             
@@ -237,7 +233,6 @@
             </details>
         </div>
         
-        <!-- PUSH CONTROL -->
         <button id="push-enable-btn" style="width:100%; padding:15px; border-radius:12px; background:var(--gold); color:black; border:0; font-weight:bold; margin-bottom:20px; display:none;">
             🔔 Push-Nachrichten aktivieren
         </button>
@@ -252,7 +247,6 @@
     </div>
 </div>
 
-<!-- Ride Alert Modal -->
 <div id="ride-alert-modal" class="modal">
     <div class="modal-content">
         <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:20px;">
@@ -269,14 +263,13 @@
     </div>
 </div>
 
-<!-- Firebase & Push Module -->
 <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
     import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
     import { getMessaging, getToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js';
 
-    // DEINE FIREBASE CONFIG (Die hast du mir gegeben)
+    // DEINE ECHTEN KEYS
     const firebaseConfig = {
       apiKey: "AIzaSyAf4nF5XItLd6CC3sdQ_ePEYduaSTdXjGI",
       authDomain: "ep-pro-c768d.firebaseapp.com",
@@ -385,7 +378,6 @@
         } catch (err) { console.error("Push Fehler:", err); }
     };
 
-    // HISTORY FETCHING
     window.fetchHistory = async () => {
         try {
             const historyRef = doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'history_rolling', 'main');
@@ -406,28 +398,25 @@
     const QT_URL = "https://queue-times.com/parks/51/queue_times.json";
     const CENTER = [48.266, 7.721];
     
-    // VOLLSTÄNDIGE RIDE LISTE
+    // UPDATED COORDS - Eingänge & Wichtige Rides
     const RIDE_PROPS = {
-        "WODAN - Timburcoaster": { sr: true, lat: 48.2625, lon: 7.7183, best: 35 },
-        "blue fire Megacoaster": { sr: true, lat: 48.2618, lon: 7.7205, best: 30 },
-        "Silver Star": { sr: true, lat: 48.2691, lon: 7.7218, best: 25 },
-        "Arthur": { sr: true, lat: 48.2675, lon: 7.7166, best: 35 },
-        "Voletarium": { sr: true, lat: 48.2690, lon: 7.7235, best: 25 },
-        "Euro-Mir": { sr: true, lat: 48.2655, lon: 7.7210, best: 25 },
-        "Piraten in Batavia": { sr: false, lat: 48.2665, lon: 7.7202, best: 15 },
-        "Eurosat - CanCan Coaster": { sr: false, lat: 48.2673, lon: 7.7213, best: 25 },
-        "Eurosat Coastiality": { lat: 48.2672, lon: 7.7210, best: 30 },
-        "Matterhorn-Blitz": { sr: false, lat: 48.2663, lon: 7.7218, best: 35 },
+        "WODAN - Timburcoaster": { sr: true, lat: 48.2614, lon: 7.7192, best: 35 },
+        "blue fire Megacoaster": { sr: true, lat: 48.2624, lon: 7.7185, best: 30 },
+        "Silver Star": { sr: true, lat: 48.2678, lon: 7.7202, best: 25 },
+        "Arthur": { sr: true, lat: 48.2639, lon: 7.7237, best: 35 },
+        "Voletarium": { sr: true, lat: 48.2689, lon: 7.7225, best: 25 },
+        "Euro-Mir": { sr: true, lat: 48.2654, lon: 7.7201, best: 25 },
+        "Eurosat - CanCan Coaster": { sr: false, lat: 48.2674, lon: 7.7208, best: 25 },
+        "Piraten in Batavia": { sr: false, lat: 48.2636, lon: 7.7197, best: 15 },
+        "Matterhorn-Blitz": { sr: false, lat: 48.2669, lon: 7.7204, best: 35 },
+        "Poseidon": { sr: false, lat: 48.2645, lon: 7.7215, best: 25 },
+        "Atlantica SuperSplash": { sr: false, lat: 48.2612, lon: 7.7205, best: 20 },
         "Schweizer Bobbahn": { sr: false, lat: 48.2660, lon: 7.7222, best: 20 },
         "Tiroler Wildwasserbahn": { sr: false, lat: 48.2651, lon: 7.7235, best: 20 },
         "Alpenexpress Enzian": { sr: false, lat: 48.2648, lon: 7.7232, best: 15 },
-        "Poseidon": { sr: false, lat: 48.2645, lon: 7.7215, best: 25 },
-        "Atlantica SuperSplash": { sr: false, lat: 48.2610, lon: 7.7215, best: 20 },
         "Pegasus - Die YoungStar Achterbahn": { lat: 48.2642, lon: 7.7210, best: 15 },
-        "Fluch der Kassandra": { lat: 48.2640, lon: 7.7205, best: 5 },
-        "Abenteuer Atlantis": { lat: 48.2638, lon: 7.7215, best: 15 },
-        "Snorri Touren": { sr: false, lat: 48.2662, lon: 7.7195, best: 20 },
         "Fjord-Rafting": { sr: false, lat: 48.2655, lon: 7.7185, best: 30 },
+        "Snorri Touren": { sr: false, lat: 48.2662, lon: 7.7195, best: 20 },
         "Vindjammer": { lat: 48.2660, lon: 7.7190, best: 10 },
         "Geisterschloss": { lat: 48.2685, lon: 7.7230, best: 10 },
         "Piccolo Mondo": { lat: 48.2688, lon: 7.7232, best: 5 },
@@ -437,8 +426,7 @@
         "Wiener Wellenflieger": { lat: 48.2655, lon: 7.7230, best: 10 },
         "Feria Swing": { lat: 48.2625, lon: 7.7235, best: 5 },
         "Koffiekopjes": { lat: 48.2675, lon: 7.7195, best: 10 },
-        "Ba-a-a Express": { lat: 48.2685, lon: 7.7195, best: 10 },
-        "Schlittenfahrt Schneeflöckchen": { lat: 48.2650, lon: 7.7205, best: 10 }
+        "Ba-a-a Express": { lat: 48.2685, lon: 7.7195, best: 10 }
     };
 
     const PROXIES = [
@@ -457,8 +445,7 @@
     let map, rideMarkers = [], userMarker;
     let currentEditRideId = null;
 
-    // --- GITHUB CONTROL LOGIK ---
-    // Werte laden (leer initialisieren)
+    // --- GITHUB CONTROL ---
     let ghUser = localStorage.getItem('gh_user') || "";
     let ghRepo = localStorage.getItem('gh_repo') || "";
     let ghToken = localStorage.getItem('gh_token') || "";
@@ -475,11 +462,9 @@
         ghUser = document.getElementById('gh-user').value.trim();
         ghRepo = document.getElementById('gh-repo').value.trim();
         ghToken = document.getElementById('gh-token').value.trim();
-        
         localStorage.setItem('gh_user', ghUser);
         localStorage.setItem('gh_repo', ghRepo);
         localStorage.setItem('gh_token', ghToken);
-        
         showToast("GitHub Daten gespeichert!");
         checkWorkflowStatus();
     };
@@ -501,32 +486,23 @@
     }
 
     window.toggleGitHubWorkflow = async () => {
-        if(!ghUser || !ghRepo || !ghToken) return alert("Bitte erst GitHub Daten unten eingeben und speichern!");
-        
+        if(!ghUser || !ghRepo || !ghToken) return alert("Bitte erst GitHub Daten eingeben!");
         const btn = document.getElementById('monitoring-toggle-btn');
         const isCurrentlyActive = btn.innerText.includes("AN");
         const newState = isCurrentlyActive ? "disable" : "enable";
-        
         btn.innerText = "⏳ Schalte um...";
         btn.disabled = true;
 
         try {
             const resp = await fetch(`https://api.github.com/repos/${ghUser}/${ghRepo}/actions/workflows/check_waits.yml/${newState}`, {
                 method: 'PUT',
-                headers: { 
-                    'Authorization': `token ${ghToken}`,
-                    'Accept': 'application/vnd.github+json'
-                }
+                headers: { 'Authorization': `token ${ghToken}`, 'Accept': 'application/vnd.github+json' }
             });
-            
             if(resp.status === 204) {
                 showToast(isCurrentlyActive ? "Server gestoppt!" : "Server gestartet!");
                 updateSwitchUI(!isCurrentlyActive);
-            } else {
-                alert("Fehler beim Umschalten. Rechte prüfen!");
-            }
+            } else { alert("Fehler beim Umschalten."); }
         } catch(e) { alert("Netzwerkfehler: " + e.message); }
-        
         btn.disabled = false;
     };
 
@@ -542,8 +518,8 @@
             btn.style.color = "var(--text-dim)";
         }
     }
-    // --- ENDE GITHUB ---
 
+    // --- MAIN APP ---
     function findProps(name) {
         if (RIDE_PROPS[name]) return RIDE_PROPS[name];
         const keys = Object.keys(RIDE_PROPS);
@@ -562,9 +538,7 @@
     function updateUserOnMap() {
         if (!map || !userPos) return;
         if (!userMarker) {
-            userMarker = L.circleMarker([userPos.lat, userPos.lon], { 
-                radius: 9, color: '#fff', weight: 2, fillColor: '#38bdf8', fillOpacity: 1 
-            }).addTo(map).bindPopup("Dein Standort");
+            userMarker = L.circleMarker([userPos.lat, userPos.lon], { radius: 9, color: '#fff', weight: 2, fillColor: '#38bdf8', fillOpacity: 1 }).addTo(map).bindPopup("Dein Standort");
         } else {
             userMarker.setLatLng([userPos.lat, userPos.lon]);
         }
@@ -573,8 +547,6 @@
     async function refresh(manual = false) {
         if (manual) document.getElementById('refresh-svg').classList.add('spinning');
         const label = document.getElementById('proxy-label');
-        
-        // 1. Live Daten
         for (let p of PROXIES) {
             try {
                 const resp = await fetch(p.url(QT_URL + "?cb=" + Date.now()), { signal: AbortSignal.timeout(7000) });
@@ -582,9 +554,7 @@
                 if (data && data.lands) {
                     parkData = {};
                     data.lands.forEach(l => {
-                        parkData[l.name] = l.rides.map(r => ({
-                            ...r, props: findProps(r.name)
-                        }));
+                        parkData[l.name] = l.rides.map(r => ({ ...r, props: findProps(r.name) }));
                     });
                     lastSync = Date.now();
                     label.innerText = `Verbunden: ${p.name}`;
@@ -595,23 +565,22 @@
                 }
             } catch (e) { label.innerText = `${p.name} Error`; }
         }
-
-        // 2. History Daten laden (Mit korrigiertem Pfad)
         if(window.fetchHistory) await window.fetchHistory();
-
         document.getElementById('refresh-svg').classList.remove('spinning');
     }
 
-    // --- GRAPH LOGIC ---
+    // --- GRAPH LOGIC (Verbessert: Min/Max Anzeige & Höhe) ---
     function drawSparkline(data) {
         if (!data || data.length < 2) return '';
-        const width = 80; const height = 40;
+        const width = 100; const height = 50; // Etwas größer
         const maxVal = Math.max(...data, 60); 
-        const minVal = 0;
-        
+        const minVal = Math.min(...data);
+        const padding = 12; // Platz für Text oben/unten
+
         const points = data.map((val, i) => {
             const x = (i / (data.length - 1)) * width;
-            const y = height - ((val - minVal) / (maxVal - minVal)) * height;
+            // Skaliere zwischen padding und height-padding
+            const y = (height - padding) - ((val - minVal) / (maxVal - minVal || 1)) * (height - 2*padding);
             return `${x},${y}`;
         }).join(' ');
 
@@ -621,8 +590,10 @@
 
         return `
             <svg width="${width}" height="${height}" class="history-graph">
+                <text x="0" y="8" class="graph-text">Max: ${maxVal}</text>
+                <text x="0" y="${height}" class="graph-text">Min: ${minVal}</text>
                 <polyline points="${points}" class="graph-line" stroke="${color}"/>
-                <circle cx="${width}" cy="${height - ((last/maxVal)*height)}" r="3" fill="${color}" />
+                <circle cx="${width}" cy="${(height - padding) - ((last - minVal) / (maxVal - minVal || 1)) * (height - 2*padding)}" r="3" fill="${color}" />
             </svg>
         `;
     }
@@ -691,87 +662,18 @@
         updateUserOnMap();
     }
 
-    // --- NEUE EINSTELLUNGS-LOGIK ---
-    window.openRideSettings = (id, name) => {
-        currentEditRideId = id;
-        document.getElementById('alert-ride-name').innerText = name;
-        const val = window.enabledAlerts[id] || 20;
-        document.getElementById('alert-threshold').value = val;
-        document.getElementById('ride-alert-modal').style.display = 'block';
-    }
+    // Modal & Settings
+    window.openRideSettings = (id, name) => { currentEditRideId = id; document.getElementById('alert-ride-name').innerText = name; document.getElementById('alert-threshold').value = window.enabledAlerts[id] || 20; document.getElementById('ride-alert-modal').style.display = 'block'; }
+    window.closeRideModal = () => { document.getElementById('ride-alert-modal').style.display = 'none'; currentEditRideId = null; }
+    window.saveRideAlert = async () => { if(!currentEditRideId) return; const val = parseInt(document.getElementById('alert-threshold').value); if(isNaN(val)) return; window.enabledAlerts[currentEditRideId] = val; localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts)); if(window.syncAlertsToCloud) await window.syncAlertsToCloud(window.enabledAlerts); window.renderList(); closeRideModal(); showToast(`Alarm < ${val} min`); }
+    window.deleteRideAlert = async () => { if(!currentEditRideId) return; delete window.enabledAlerts[currentEditRideId]; localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts)); if(window.syncAlertsToCloud) await window.syncAlertsToCloud(window.enabledAlerts); window.renderList(); closeRideModal(); }
 
-    window.closeRideModal = () => {
-        document.getElementById('ride-alert-modal').style.display = 'none';
-        currentEditRideId = null;
-    }
-
-    window.saveRideAlert = async () => {
-        if(!currentEditRideId) return;
-        const val = parseInt(document.getElementById('alert-threshold').value);
-        if(isNaN(val) || val < 0) return alert("Bitte gültige Zahl eingeben");
-
-        window.enabledAlerts[currentEditRideId] = val;
-        localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts));
-        if (window.syncAlertsToCloud) await window.syncAlertsToCloud(window.enabledAlerts);
-        
-        window.renderList();
-        closeRideModal();
-        showToast(`Alarm bei < ${val} min gesetzt!`);
-    }
-
-    window.deleteRideAlert = async () => {
-        if(!currentEditRideId) return;
-        delete window.enabledAlerts[currentEditRideId];
-        localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts));
-        if (window.syncAlertsToCloud) await window.syncAlertsToCloud(window.enabledAlerts);
-        window.renderList();
-        closeRideModal();
-        showToast("Alarm gelöscht.");
-    }
-
-    function toggleFav(id) {
-        if (selectedIds.includes(id)) selectedIds = selectedIds.filter(i => i !== id);
-        else selectedIds.push(id);
-        localStorage.setItem('ep_favs', JSON.stringify(selectedIds));
-        window.renderList();
-    }
-
-    function switchView(v) {
-        document.getElementById('list-view').style.display = v==='list'?'block':'none';
-        document.getElementById('map-view').style.display = v==='map'?'block':'none';
-        document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('btn-' + v).classList.add('active');
-        if (v==='map') {
-            if (!map) {
-                map = L.map('map-view', {zoomControl: false}).setView(CENTER, 17);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-            }
-            setTimeout(() => { map.invalidateSize(); updateMarkers(); updateUserOnMap(); }, 200);
-        }
-    }
-
-    function calcDist(lat1, lon1, lat2, lon2) {
-        const R = 6371; const dLat = (lat2-lat1)*Math.PI/180; const dLon = (lon2-lon1)*Math.PI/180;
-        const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-        const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return d < 1 ? Math.round(d*1000)+"m" : d.toFixed(1)+"km";
-    }
-
-    function openSettings() { 
-        document.getElementById('settings-modal').style.display='block'; 
-        window.renderSettings(); 
-        loadGitHubConfig(); 
-    }
-    
+    function toggleFav(id) { if (selectedIds.includes(id)) selectedIds = selectedIds.filter(i => i !== id); else selectedIds.push(id); localStorage.setItem('ep_favs', JSON.stringify(selectedIds)); window.renderList(); }
+    function switchView(v) { document.getElementById('list-view').style.display = v==='list'?'block':'none'; document.getElementById('map-view').style.display = v==='map'?'block':'none'; document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active')); document.getElementById('btn-' + v).classList.add('active'); if (v==='map') { if (!map) { map = L.map('map-view', {zoomControl: false}).setView([48.266, 7.721], 16); L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map); } setTimeout(() => { map.invalidateSize(); updateMarkers(); updateUserOnMap(); }, 200); } }
+    function calcDist(lat1, lon1, lat2, lon2) { const R = 6371; const dLat = (lat2-lat1)*Math.PI/180; const dLon = (lon2-lon1)*Math.PI/180; const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2; return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1)+"km"; }
+    function openSettings() { document.getElementById('settings-modal').style.display='block'; window.renderSettings(); loadGitHubConfig(); }
     function closeSettings() { document.getElementById('settings-modal').style.display='none'; }
-    
-    window.renderSettings = () => {
-        const list = document.getElementById('settings-list'); list.innerHTML = "";
-        let flat = []; for(let l in parkData) flat = [...flat, ...parkData[l]];
-        flat.sort((a,b)=>a.name.localeCompare(b.name)).forEach(r => {
-            list.innerHTML += `<div class="settings-item"><span>${r.name}</span><input type="checkbox" ${selectedIds.includes(r.id)?'checked':''} onchange="toggleFav(${r.id})"></div>`;
-        });
-    };
+    window.renderSettings = () => { const list = document.getElementById('settings-list'); list.innerHTML = ""; let flat = []; for(let l in parkData) flat = [...flat, ...parkData[l]]; flat.sort((a,b)=>a.name.localeCompare(b.name)).forEach(r => { list.innerHTML += `<div class="settings-item"><span>${r.name}</span><input type="checkbox" ${selectedIds.includes(r.id)?'checked':''} onchange="toggleFav(${r.id})"></div>`; }); };
     function manualRefresh() { refresh(true); }
     function resetMap() { if(map) map.flyTo(userPos ? [userPos.lat, userPos.lon] : [48.266, 7.721], 17); }
     function showToast(m, bg) { const t=document.getElementById('toast'); t.innerText=m; if(bg) t.style.background=bg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); }
@@ -779,10 +681,7 @@
 
     refresh();
     setInterval(refresh, 90000);
-
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register(window.getSWPath());
-    }
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register(window.getSWPath());
 </script>
 </body>
 </html>
