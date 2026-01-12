@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EP Pro</title>
+    <title>EP Strategie Ultra (Final Graph)</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b1120">
@@ -127,7 +127,7 @@
         .card { 
             background: var(--card-bg); border-radius: 20px; padding: 16px; 
             border: 1px solid rgba(255, 255, 255, 0.05); position: relative; 
-            min-height: 100px; /* Etwas höher für den Graphen */
+            min-height: 100px;
             backdrop-filter: blur(10px);
         }
         
@@ -147,18 +147,17 @@
         /* GRAPH STYLES */
         .history-graph {
             position: absolute; bottom: 8px; right: 8px;
-            width: 100px; height: 50px;
+            width: 80px; height: 40px; /* Kompakter */
             pointer-events: none;
         }
         .graph-line { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)); }
-        .graph-text { font-size: 9px; fill: var(--text-dim); font-weight: bold; }
+        .graph-text { font-size: 9px; fill: var(--text-dim); font-weight: bold; font-family: monospace; }
 
         .ride-marker { width: 34px; height: 34px; border-radius: 50%; border: 2.5px solid white; color: white; font-weight: 900; font-size: 13px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 
         #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent); color: white; padding: 12px 25px; border-radius: 15px; font-size: 0.85em; z-index: 5000; transition: transform 0.4s; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #toast.show { transform: translateX(-50%) translateY(0); }
 
-        /* Modals */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; padding: 25px; overflow-y: auto; backdrop-filter: blur(5px); }
         .modal-content { background: #1e293b; padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); margin-top: 5vh; }
         .settings-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #1e293b; }
@@ -170,7 +169,6 @@
         .save-btn { width: 100%; padding: 15px; background: var(--gold); color: black; border: none; border-radius: 12px; font-weight: bold; font-size: 1em; cursor: pointer; margin-bottom: 10px; }
         .delete-btn { width: 100%; padding: 15px; background: transparent; color: var(--up); border: 1px solid var(--up); border-radius: 12px; font-weight: bold; font-size: 1em; cursor: pointer; }
 
-        /* GitHub Config */
         .gh-config { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         .gh-config h3 { margin-top: 0; color: var(--accent); font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; }
 
@@ -201,6 +199,7 @@
 <div id="list-view"><div id="main-content"></div></div>
 <div id="map-view"><button class="map-overlay-btn" onclick="resetMap()">🎯</button></div>
 
+<!-- Settings Modal -->
 <div id="settings-modal" class="modal">
     <div class="modal-content">
         <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:25px;">
@@ -210,25 +209,14 @@
         
         <div class="gh-config" id="gh-config-box">
             <h3>GitHub Server Steuerung</h3>
-            
             <button id="monitoring-toggle-btn" class="btn-icon" style="width:100%; background:var(--text-dim); font-weight:bold; margin-bottom:15px; height:50px; color:white; border:none;" onclick="toggleGitHubWorkflow()">
                 ⚪ Status wird geladen...
             </button>
-
             <details style="color:var(--text-dim); font-size:0.8em;">
                 <summary>Verbindungsdaten bearbeiten</summary>
-                <div class="input-group">
-                    <label>GitHub User:</label>
-                    <input type="text" id="gh-user" placeholder="z.B. DeinName">
-                </div>
-                <div class="input-group">
-                    <label>Repo Name:</label>
-                    <input type="text" id="gh-repo" placeholder="z.B. europapark">
-                </div>
-                <div class="input-group">
-                    <label>Token (Repo Scope):</label>
-                    <input type="password" id="gh-token" placeholder="ghp_...">
-                </div>
+                <div class="input-group"><label>GitHub User:</label><input type="text" id="gh-user" placeholder="z.B. DeinName"></div>
+                <div class="input-group"><label>Repo Name:</label><input type="text" id="gh-repo" placeholder="z.B. europapark"></div>
+                <div class="input-group"><label>Token (Repo Scope):</label><input type="password" id="gh-token" placeholder="ghp_..."></div>
                 <button class="save-btn" style="background:#334155; margin-top:5px;" onclick="saveGitHubConfig()">Speichern</button>
             </details>
         </div>
@@ -247,6 +235,7 @@
     </div>
 </div>
 
+<!-- Ride Alert Modal -->
 <div id="ride-alert-modal" class="modal">
     <div class="modal-content">
         <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:20px;">
@@ -269,7 +258,7 @@
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
     import { getMessaging, getToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js';
 
-    // DEINE ECHTEN KEYS
+    // FIREBASE CONFIG
     const firebaseConfig = {
       apiKey: "AIzaSyAf4nF5XItLd6CC3sdQ_ePEYduaSTdXjGI",
       authDomain: "ep-pro-c768d.firebaseapp.com",
@@ -279,7 +268,6 @@
       appId: "1:678617107748:web:11c73addee5db76f26f7b1",
       measurementId: "G-1MBSKD8ZH4"
     };
-
     const VAPID_KEY = "BFp2JrM56fRBkdVd6izSz7slAIP513-LhE3LgV049a8-9QVxzpIUjsqFU6bgNTQOjFPZR8yXfYymRGad0IbvPKo";
     const APP_ID_PATH = 'ep-pro-strategie';
     
@@ -295,13 +283,10 @@
     onAuthStateChanged(auth, (user) => {
         currentUser = user;
         if (user) {
-            if (Notification.permission !== 'granted') {
-                document.getElementById('push-enable-btn').style.display = 'block';
-            }
-            const alertRef = doc(db, 'artifacts', APP_ID_PATH, 'users', user.uid, 'settings', 'alerts');
-            onSnapshot(alertRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
+            if (Notification.permission !== 'granted') document.getElementById('push-enable-btn').style.display = 'block';
+            onSnapshot(doc(db, 'artifacts', APP_ID_PATH, 'users', user.uid, 'settings', 'alerts'), (snap) => {
+                if (snap.exists()) {
+                    const data = snap.data();
                     window.enabledAlerts = data.alerts || {};
                     if(Array.isArray(window.enabledAlerts)) window.enabledAlerts = {};
                     localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts));
@@ -315,11 +300,8 @@
         if (!currentUser) return;
         const jobRef = doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'alertJobs', currentUser.uid);
         await setDoc(jobRef, { 
-            userId: currentUser.uid, 
-            alerts: alerts, 
-            active: Object.keys(alerts).length > 0 
+            userId: currentUser.uid, alerts: alerts, active: Object.keys(alerts).length > 0 
         }, { merge: true });
-        
         await setDoc(doc(db, 'artifacts', APP_ID_PATH, 'users', currentUser.uid, 'settings', 'alerts'), { alerts: alerts }, { merge: true });
     };
 
@@ -328,31 +310,19 @@
         const btn = document.getElementById('push-test-btn');
         btn.innerText = "⏳ Sende...";
         btn.disabled = true;
-
         try {
             let reg = await navigator.serviceWorker.getRegistration();
             if(!reg) reg = await navigator.serviceWorker.register(getSWPath(), { scope: './' });
-
             const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
-            if (!token) throw new Error("Kein Token. Klicke erst 'Push aktivieren'.");
+            if (!token) throw new Error("Kein Token.");
             
-            const jobRef = doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'alertJobs', currentUser.uid);
-            await setDoc(jobRef, { 
-                fcmToken: token, 
-                testRequested: true,
-                lastUpdate: Date.now()
+            await setDoc(doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'alertJobs', currentUser.uid), { 
+                fcmToken: token, testRequested: true, lastUpdate: Date.now() 
             }, { merge: true });
-
             showToast("Test angefordert!");
             btn.innerText = "✅ Fertig";
             setTimeout(() => { btn.disabled = false; btn.innerText = "🚀 Cloud Push-Test"; }, 5000);
-
-        } catch (err) {
-            console.error(err);
-            btn.disabled = false;
-            btn.innerText = "❌ Fehler";
-            alert("Fehler: " + err.message);
-        }
+        } catch (err) { console.error(err); btn.disabled = false; btn.innerText = "❌ Fehler"; alert("Fehler: " + err.message); }
     };
 
     window.getSWPath = () => {
@@ -365,13 +335,10 @@
         try {
             const permission = await Notification.requestPermission();
             if (permission !== 'granted') return alert("Bitte Benachrichtigungen erlauben.");
-            
             const reg = await navigator.serviceWorker.register(getSWPath(), { scope: './' });
             const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
-            
             if (token && currentUser) {
-                const jobRef = doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'alertJobs', currentUser.uid);
-                await setDoc(jobRef, { fcmToken: token }, { merge: true });
+                await setDoc(doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'alertJobs', currentUser.uid), { fcmToken: token }, { merge: true });
                 showToast("Push aktiviert!");
                 document.getElementById('push-enable-btn').style.display = 'none';
             }
@@ -380,14 +347,10 @@
 
     window.fetchHistory = async () => {
         try {
-            const historyRef = doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'history_rolling', 'main');
-            const snap = await getDoc(historyRef);
-            if (snap.exists()) {
-                const data = snap.data();
-                if (data.points) {
-                    window.historyPoints = data.points;
-                    window.updateGraphs();
-                }
+            const snap = await getDoc(doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'history_rolling', 'main'));
+            if (snap.exists() && snap.data().points) {
+                window.historyPoints = snap.data().points;
+                window.updateGraphs();
             }
         } catch (e) { console.log("History fetch failed", e); }
     };
@@ -397,8 +360,11 @@
 <script>
     const QT_URL = "https://queue-times.com/parks/51/queue_times.json";
     const CENTER = [48.266, 7.721];
-    
-    // UPDATED COORDS - Eingänge & Wichtige Rides
+    const PROXIES = [
+        { name: "Cloud-B (Fast)", url: u => `https://corsproxy.io/?${encodeURIComponent(u)}`, wrap: false },
+        { name: "Cloud-A", url: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, wrap: true }
+    ];
+
     const RIDE_PROPS = {
         "WODAN - Timburcoaster": { sr: true, lat: 48.2614, lon: 7.7192, best: 35 },
         "blue fire Megacoaster": { sr: true, lat: 48.2624, lon: 7.7185, best: 30 },
@@ -429,11 +395,6 @@
         "Ba-a-a Express": { lat: 48.2685, lon: 7.7195, best: 10 }
     };
 
-    const PROXIES = [
-        { name: "Cloud-B (Fast)", url: u => `https://corsproxy.io/?${encodeURIComponent(u)}`, wrap: false },
-        { name: "Cloud-A", url: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, wrap: true }
-    ];
-
     window.enabledAlerts = JSON.parse(localStorage.getItem('ep_alerts')) || {};
     window.historyPoints = [];
     if(Array.isArray(window.enabledAlerts)) window.enabledAlerts = {};
@@ -445,7 +406,6 @@
     let map, rideMarkers = [], userMarker;
     let currentEditRideId = null;
 
-    // --- GITHUB CONTROL ---
     let ghUser = localStorage.getItem('gh_user') || "";
     let ghRepo = localStorage.getItem('gh_repo') || "";
     let ghToken = localStorage.getItem('gh_token') || "";
@@ -465,7 +425,7 @@
         localStorage.setItem('gh_user', ghUser);
         localStorage.setItem('gh_repo', ghRepo);
         localStorage.setItem('gh_token', ghToken);
-        showToast("GitHub Daten gespeichert!");
+        showToast("Gespeichert!");
         checkWorkflowStatus();
     };
 
@@ -486,7 +446,7 @@
     }
 
     window.toggleGitHubWorkflow = async () => {
-        if(!ghUser || !ghRepo || !ghToken) return alert("Bitte erst GitHub Daten eingeben!");
+        if(!ghUser || !ghRepo || !ghToken) return alert("Daten eingeben!");
         const btn = document.getElementById('monitoring-toggle-btn');
         const isCurrentlyActive = btn.innerText.includes("AN");
         const newState = isCurrentlyActive ? "disable" : "enable";
@@ -499,10 +459,10 @@
                 headers: { 'Authorization': `token ${ghToken}`, 'Accept': 'application/vnd.github+json' }
             });
             if(resp.status === 204) {
-                showToast(isCurrentlyActive ? "Server gestoppt!" : "Server gestartet!");
+                showToast(isCurrentlyActive ? "Gestoppt!" : "Gestartet!");
                 updateSwitchUI(!isCurrentlyActive);
             } else { alert("Fehler beim Umschalten."); }
-        } catch(e) { alert("Netzwerkfehler: " + e.message); }
+        } catch(e) { alert("Fehler: " + e.message); }
         btn.disabled = false;
     };
 
@@ -519,7 +479,6 @@
         }
     }
 
-    // --- MAIN APP ---
     function findProps(name) {
         if (RIDE_PROPS[name]) return RIDE_PROPS[name];
         const keys = Object.keys(RIDE_PROPS);
@@ -527,60 +486,19 @@
         return { lat: 48.266, lon: 7.721, best: 10, isFallback: true };
     }
 
-    if (navigator.geolocation) {
-        navigator.geolocation.watchPosition(pos => {
-            userPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-            if(map) updateUserOnMap();
-            window.renderList();
-        }, null, { enableHighAccuracy: true });
-    }
-
-    function updateUserOnMap() {
-        if (!map || !userPos) return;
-        if (!userMarker) {
-            userMarker = L.circleMarker([userPos.lat, userPos.lon], { radius: 9, color: '#fff', weight: 2, fillColor: '#38bdf8', fillOpacity: 1 }).addTo(map).bindPopup("Dein Standort");
-        } else {
-            userMarker.setLatLng([userPos.lat, userPos.lon]);
-        }
-    }
-
-    async function refresh(manual = false) {
-        if (manual) document.getElementById('refresh-svg').classList.add('spinning');
-        const label = document.getElementById('proxy-label');
-        for (let p of PROXIES) {
-            try {
-                const resp = await fetch(p.url(QT_URL + "?cb=" + Date.now()), { signal: AbortSignal.timeout(7000) });
-                let data = p.wrap ? JSON.parse((await resp.json()).contents) : await resp.json();
-                if (data && data.lands) {
-                    parkData = {};
-                    data.lands.forEach(l => {
-                        parkData[l.name] = l.rides.map(r => ({ ...r, props: findProps(r.name) }));
-                    });
-                    lastSync = Date.now();
-                    label.innerText = `Verbunden: ${p.name}`;
-                    window.renderList();
-                    if (map) updateMarkers();
-                    if (manual) showToast("Daten aktuell!");
-                    break;
-                }
-            } catch (e) { label.innerText = `${p.name} Error`; }
-        }
-        if(window.fetchHistory) await window.fetchHistory();
-        document.getElementById('refresh-svg').classList.remove('spinning');
-    }
-
-    // --- GRAPH LOGIC (Verbessert: Min/Max Anzeige & Höhe) ---
     function drawSparkline(data) {
         if (!data || data.length < 2) return '';
-        const width = 100; const height = 50; // Etwas größer
-        const maxVal = Math.max(...data, 60); 
-        const minVal = Math.min(...data);
-        const padding = 12; // Platz für Text oben/unten
-
+        const width = 60; const height = 40; // Maße angepasst
+        const rightPadding = 30; // Platz für Text rechts
+        const totalWidth = width + rightPadding;
+        
+        const realMax = Math.max(...data);
+        const realMin = Math.min(...data);
+        const scaleMax = realMax > 0 ? realMax : 1; 
+        
         const points = data.map((val, i) => {
             const x = (i / (data.length - 1)) * width;
-            // Skaliere zwischen padding und height-padding
-            const y = (height - padding) - ((val - minVal) / (maxVal - minVal || 1)) * (height - 2*padding);
+            const y = height - ((val / scaleMax) * height);
             return `${x},${y}`;
         }).join(' ');
 
@@ -589,11 +507,11 @@
         const color = last < prev ? 'var(--down)' : (last > prev ? 'var(--up)' : 'var(--accent)');
 
         return `
-            <svg width="${width}" height="${height}" class="history-graph">
-                <text x="0" y="8" class="graph-text">Max: ${maxVal}</text>
-                <text x="0" y="${height}" class="graph-text">Min: ${minVal}</text>
+            <svg width="${totalWidth}" height="${height}" class="history-graph" style="overflow:visible">
                 <polyline points="${points}" class="graph-line" stroke="${color}"/>
-                <circle cx="${width}" cy="${(height - padding) - ((last - minVal) / (maxVal - minVal || 1)) * (height - 2*padding)}" r="3" fill="${color}" />
+                <circle cx="${width}" cy="${height - ((last/scaleMax)*height)}" r="3" fill="${color}" />
+                <text x="${totalWidth}" y="10" class="graph-text" text-anchor="end" fill="var(--text-dim)">${realMax}</text>
+                <text x="${totalWidth}" y="${height}" class="graph-text" text-anchor="end" fill="var(--text-dim)">${realMin}</text>
             </svg>
         `;
     }
@@ -601,17 +519,12 @@
     window.updateGraphs = () => {
         if (!window.historyPoints || window.historyPoints.length === 0) return;
         const sortedPoints = window.historyPoints.sort((a,b) => a.t - b.t);
-
         document.querySelectorAll('.card').forEach(card => {
             const rideId = card.getAttribute('data-ride-id');
             if (!rideId) return;
             const waitTimes = [];
             sortedPoints.forEach(p => {
-                const entry = p.rides[rideId];
-                if (entry) {
-                    const w = typeof entry === 'object' ? entry.w : entry;
-                    if(w >= 0) waitTimes.push(w);
-                }
+                if (p.rides && p.rides[rideId] !== undefined) waitTimes.push(p.rides[rideId]);
             });
             const container = document.getElementById('graph-container-' + rideId);
             if (container) container.innerHTML = drawSparkline(waitTimes);
@@ -633,14 +546,11 @@
                 return `<div class="card" data-ride-id="${r.id}" style="${isDeal ? 'border-color:var(--gold)' : ''}">
                     <div class="settings-gear ${alertActive ? 'active' : ''}" onclick="openRideSettings('${r.id}', '${r.name.replace(/'/g, "\\'")}')">⚙️</div>
                     ${alertActive ? `<div class="settings-label">🔔 < ${threshold}m</div>` : ''}
-                    
                     <div>${r.props.sr ? '<span class="badge badge-sr">SR</span>' : ''}${isDeal ? '<span class="badge badge-deal">Deal</span>' : ''}</div>
                     <div class="ride-name">${r.name}</div>
                     <div class="wait-time" style="color:${r.is_open ? (r.wait_time > 40 ? 'var(--up)' : 'var(--accent)') : 'var(--text-dim)'}">${r.is_open ? r.wait_time : '✕'}</div>
                     ${d ? `<div class="dist-tag">📍 ${d}</div>` : ''}
-                    
-                    <!-- Graph Placeholder -->
-                    <div id="graph-container-${r.id}"></div>
+                    <div id="graph-container-${r.id}" style="position: absolute; bottom: 8px; right: 8px;"></div>
                 </div>`;
             }).join('')}</div></div>`;
         }
@@ -662,7 +572,6 @@
         updateUserOnMap();
     }
 
-    // Modal & Settings
     window.openRideSettings = (id, name) => { currentEditRideId = id; document.getElementById('alert-ride-name').innerText = name; document.getElementById('alert-threshold').value = window.enabledAlerts[id] || 20; document.getElementById('ride-alert-modal').style.display = 'block'; }
     window.closeRideModal = () => { document.getElementById('ride-alert-modal').style.display = 'none'; currentEditRideId = null; }
     window.saveRideAlert = async () => { if(!currentEditRideId) return; const val = parseInt(document.getElementById('alert-threshold').value); if(isNaN(val)) return; window.enabledAlerts[currentEditRideId] = val; localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts)); if(window.syncAlertsToCloud) await window.syncAlertsToCloud(window.enabledAlerts); window.renderList(); closeRideModal(); showToast(`Alarm < ${val} min`); }
@@ -681,7 +590,10 @@
 
     refresh();
     setInterval(refresh, 90000);
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register(window.getSWPath());
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register(window.getSWPath());
+    }
 </script>
 </body>
 </html>
