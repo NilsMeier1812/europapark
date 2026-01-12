@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EP Strategie Ultra (Complete)</title>
+    <title>EP Strategie Ultra (Compact Graph)</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b1120">
@@ -89,7 +89,7 @@
         /* GRAPH STYLES */
         .history-graph {
             position: absolute; bottom: 8px; right: 8px;
-            width: 80px; height: 40px; 
+            width: 75px; height: 35px; /* Kompakt */
             pointer-events: none;
         }
         .graph-line { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)); }
@@ -204,7 +204,7 @@
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
     import { getMessaging, getToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js';
 
-    // DEINE FIREBASE CONFIG
+    // DEINE ECHTEN KEYS
     const firebaseConfig = {
       apiKey: "AIzaSyAf4nF5XItLd6CC3sdQ_ePEYduaSTdXjGI",
       authDomain: "ep-pro-c768d.firebaseapp.com",
@@ -214,6 +214,7 @@
       appId: "1:678617107748:web:11c73addee5db76f26f7b1",
       measurementId: "G-1MBSKD8ZH4"
     };
+
     const VAPID_KEY = "BFp2JrM56fRBkdVd6izSz7slAIP513-LhE3LgV049a8-9QVxzpIUjsqFU6bgNTQOjFPZR8yXfYymRGad0IbvPKo";
     const APP_ID_PATH = 'ep-pro-strategie';
     
@@ -229,10 +230,13 @@
     onAuthStateChanged(auth, (user) => {
         currentUser = user;
         if (user) {
-            if (Notification.permission !== 'granted') document.getElementById('push-enable-btn').style.display = 'block';
-            onSnapshot(doc(db, 'artifacts', APP_ID_PATH, 'users', user.uid, 'settings', 'alerts'), (snap) => {
-                if (snap.exists()) {
-                    const data = snap.data();
+            if (Notification.permission !== 'granted') {
+                document.getElementById('push-enable-btn').style.display = 'block';
+            }
+            const alertRef = doc(db, 'artifacts', APP_ID_PATH, 'users', user.uid, 'settings', 'alerts');
+            onSnapshot(alertRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
                     window.enabledAlerts = data.alerts || {};
                     if(Array.isArray(window.enabledAlerts)) window.enabledAlerts = {};
                     localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts));
@@ -250,6 +254,7 @@
             alerts: alerts, 
             active: Object.keys(alerts).length > 0 
         }, { merge: true });
+        
         await setDoc(doc(db, 'artifacts', APP_ID_PATH, 'users', currentUser.uid, 'settings', 'alerts'), { alerts: alerts }, { merge: true });
     };
 
@@ -258,19 +263,31 @@
         const btn = document.getElementById('push-test-btn');
         btn.innerText = "⏳ Sende...";
         btn.disabled = true;
+
         try {
             let reg = await navigator.serviceWorker.getRegistration();
             if(!reg) reg = await navigator.serviceWorker.register(getSWPath(), { scope: './' });
+
             const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
-            if (!token) throw new Error("Kein Token.");
+            if (!token) throw new Error("Kein Token. Klicke erst 'Push aktivieren'.");
             
-            await setDoc(doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'alertJobs', currentUser.uid), { 
-                fcmToken: token, testRequested: true, lastUpdate: Date.now() 
+            const jobRef = doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'alertJobs', currentUser.uid);
+            await setDoc(jobRef, { 
+                fcmToken: token, 
+                testRequested: true,
+                lastUpdate: Date.now()
             }, { merge: true });
+
             showToast("Test angefordert!");
             btn.innerText = "✅ Fertig";
             setTimeout(() => { btn.disabled = false; btn.innerText = "🚀 Cloud Push-Test"; }, 5000);
-        } catch (err) { console.error(err); btn.disabled = false; btn.innerText = "❌ Fehler"; alert("Fehler: " + err.message); }
+
+        } catch (err) {
+            console.error(err);
+            btn.disabled = false;
+            btn.innerText = "❌ Fehler";
+            alert("Fehler: " + err.message);
+        }
     };
 
     window.getSWPath = () => {
@@ -283,22 +300,30 @@
         try {
             const permission = await Notification.requestPermission();
             if (permission !== 'granted') return alert("Bitte Benachrichtigungen erlauben.");
+            
             const reg = await navigator.serviceWorker.register(getSWPath(), { scope: './' });
             const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+            
             if (token && currentUser) {
-                await setDoc(doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'alertJobs', currentUser.uid), { fcmToken: token }, { merge: true });
+                const jobRef = doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'alertJobs', currentUser.uid);
+                await setDoc(jobRef, { fcmToken: token }, { merge: true });
                 showToast("Push aktiviert!");
                 document.getElementById('push-enable-btn').style.display = 'none';
             }
         } catch (err) { console.error("Push Fehler:", err); }
     };
 
+    // HISTORY FETCHING
     window.fetchHistory = async () => {
         try {
-            const snap = await getDoc(doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'history_rolling', 'main'));
-            if (snap.exists() && snap.data().points) {
-                window.historyPoints = snap.data().points;
-                window.updateGraphs();
+            const historyRef = doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'history_rolling', 'main');
+            const snap = await getDoc(historyRef);
+            if (snap.exists()) {
+                const data = snap.data();
+                if (data.points) {
+                    window.historyPoints = data.points;
+                    window.updateGraphs();
+                }
             }
         } catch (e) { console.log("History fetch failed", e); }
     };
@@ -313,7 +338,6 @@
         { name: "Cloud-A", url: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, wrap: true }
     ];
 
-    // VOLLSTÄNDIGE RIDE LISTE
     const RIDE_PROPS = {
         "WODAN - Timburcoaster": { sr: true, lat: 48.2614, lon: 7.7192, best: 35 },
         "blue fire Megacoaster": { sr: true, lat: 48.2624, lon: 7.7185, best: 30 },
@@ -409,7 +433,7 @@
                 headers: { 'Authorization': `token ${ghToken}`, 'Accept': 'application/vnd.github+json' }
             });
             if(resp.status === 204) {
-                showToast(isCurrentlyActive ? "Server gestoppt!" : "Server gestartet!");
+                showToast(isCurrentlyActive ? "Gestoppt!" : "Gestartet!");
                 updateSwitchUI(!isCurrentlyActive);
             } else { alert("Fehler beim Umschalten."); }
         } catch(e) { alert("Netzwerkfehler: " + e.message); }
@@ -486,12 +510,12 @@
     // --- GRAPH LOGIC (Verbessert: Min/Max Anzeige & Höhe) ---
     function drawSparkline(data) {
         if (!data || data.length < 2) return '';
-        const width = 100; const height = 50; 
-        const maxVal = Math.max(...data); // Dynamisch
+        const width = 50; const height = 35; 
+        const maxVal = Math.max(...data); 
         const minVal = Math.min(...data);
-        const padding = 12; 
+        const padding = 5; 
 
-        // Verhindert Division durch Null wenn alle Werte gleich sind
+        // Verhindert Division durch Null
         const range = maxVal - minVal;
         const scale = range > 0 ? range : 1;
 
@@ -506,11 +530,11 @@
         const color = last < prev ? 'var(--down)' : (last > prev ? 'var(--up)' : 'var(--accent)');
 
         return `
-            <svg width="${width + 30}" height="${height}" class="history-graph" style="overflow:visible">
-                <text x="${width + 5}" y="12" class="graph-text" fill="var(--text-dim)">${maxVal}</text>
-                <text x="${width + 5}" y="${height - 2}" class="graph-text" fill="var(--text-dim)">${minVal}</text>
+            <svg width="${width + 25}" height="${height}" class="history-graph" style="overflow:visible">
+                <text x="${width + 5}" y="10" class="graph-text" fill="var(--text-dim)">${maxVal}</text>
+                <text x="${width + 5}" y="${height}" class="graph-text" fill="var(--text-dim)">${minVal}</text>
                 <polyline points="${points}" class="graph-line" stroke="${color}"/>
-                <circle cx="${width}" cy="${(height - padding) - ((last - minVal) / scale) * (height - 2*padding)}" r="3" fill="${color}" />
+                <circle cx="${width}" cy="${(height - padding) - ((last - minVal) / scale) * (height - 2*padding)}" r="2" fill="${color}" />
             </svg>
         `;
     }
@@ -524,7 +548,10 @@
             if (!rideId) return;
             const waitTimes = [];
             sortedPoints.forEach(p => {
-                if (p.rides && p.rides[rideId] !== undefined) waitTimes.push(p.rides[rideId]);
+                if (p.rides && p.rides[rideId] !== undefined) {
+                    const w = p.rides[rideId];
+                    if(w >= 0) waitTimes.push(w);
+                }
             });
             const container = document.getElementById('graph-container-' + rideId);
             if (container) container.innerHTML = drawSparkline(waitTimes);
@@ -553,7 +580,7 @@
                     ${d ? `<div class="dist-tag">📍 ${d}</div>` : ''}
                     
                     <!-- Graph Placeholder -->
-                    <div id="graph-container-${r.id}" style="position: absolute; bottom: 8px; right: 8px;"></div>
+                    <div id="graph-container-${r.id}"></div>
                 </div>`;
             }).join('')}</div></div>`;
         }
@@ -575,6 +602,7 @@
         updateUserOnMap();
     }
 
+    // Modal & Settings
     window.openRideSettings = (id, name) => { currentEditRideId = id; document.getElementById('alert-ride-name').innerText = name; document.getElementById('alert-threshold').value = window.enabledAlerts[id] || 20; document.getElementById('ride-alert-modal').style.display = 'block'; }
     window.closeRideModal = () => { document.getElementById('ride-alert-modal').style.display = 'none'; currentEditRideId = null; }
     window.saveRideAlert = async () => { if(!currentEditRideId) return; const val = parseInt(document.getElementById('alert-threshold').value); if(isNaN(val)) return; window.enabledAlerts[currentEditRideId] = val; localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts)); if(window.syncAlertsToCloud) await window.syncAlertsToCloud(window.enabledAlerts); window.renderList(); closeRideModal(); showToast(`Alarm < ${val} min`); }
