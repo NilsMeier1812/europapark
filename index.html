@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EP Strategie Ultra (Final Graph)</title>
+    <title>EP Strategie Ultra (Complete)</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b1120">
@@ -35,16 +35,12 @@
             user-select: none;
         }
 
+        /* Header */
         header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 15px;
-            height: 75px;
-            background: rgba(11, 17, 32, 0.95);
-            backdrop-filter: blur(15px);
-            z-index: 1000;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 15px; height: 75px;
+            background: rgba(11, 17, 32, 0.95); backdrop-filter: blur(15px);
+            z-index: 1000; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             box-sizing: border-box;
         }
 
@@ -53,73 +49,19 @@
         #proxy-label { font-size: 0.5em; display: block; margin-top: 2px; font-weight: bold; }
         #park-name { font-size: 0.9em; font-weight: 900; letter-spacing: -0.5px; }
 
-        .toggle-group {
-            display: flex;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 3px;
-            margin: 0 10px;
-        }
-
-        .toggle-btn {
-            border: none;
-            background: none;
-            color: var(--text-dim);
-            padding: 8px 12px;
-            font-size: 0.8em;
-            font-weight: 700;
-            border-radius: 10px;
-            cursor: pointer;
-        }
-
+        .toggle-group { display: flex; background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 3px; margin: 0 10px; }
+        .toggle-btn { border: none; background: none; color: var(--text-dim); padding: 8px 12px; font-size: 0.8em; font-weight: 700; border-radius: 10px; cursor: pointer; transition: 0.2s; }
         .toggle-btn.active { background: var(--accent); color: white; }
 
-        .btn-icon {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            width: 42px;
-            height: 42px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: white;
-        }
+        .btn-icon { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; }
 
-        #list-view {
-            padding: 15px;
-            height: calc(100vh - 75px);
-            overflow-y: auto;
-            box-sizing: border-box;
-        }
+        /* Views */
+        #list-view { padding: 15px; height: calc(100vh - 75px); overflow-y: auto; box-sizing: border-box; }
+        #map-view { width: 100vw; height: calc(100vh - 75px); display: none; position: relative; }
+        
+        .map-overlay-btn { position: absolute; right: 20px; bottom: 30px; z-index: 1001; background: var(--accent); color: white; border: none; border-radius: 50%; width: 55px; height: 55px; font-size: 1.5em; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
 
-        #map-view {
-            width: 100vw;
-            height: calc(100vh - 75px);
-            display: none;
-            position: relative;
-        }
-
-        .map-overlay-btn {
-            position: absolute;
-            right: 20px;
-            bottom: 30px;
-            z-index: 1001;
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 55px;
-            height: 55px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5em;
-            cursor: pointer;
-        }
-
+        /* Cards */
         .land-section { margin-top: 20px; }
         .land-title { font-size: 0.75em; font-weight: 800; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; border-left: 4px solid var(--accent); padding-left: 10px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
@@ -147,7 +89,7 @@
         /* GRAPH STYLES */
         .history-graph {
             position: absolute; bottom: 8px; right: 8px;
-            width: 80px; height: 40px; /* Kompakter */
+            width: 80px; height: 40px; 
             pointer-events: none;
         }
         .graph-line { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)); }
@@ -158,6 +100,7 @@
         #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--accent); color: white; padding: 12px 25px; border-radius: 15px; font-size: 0.85em; z-index: 5000; transition: transform 0.4s; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #toast.show { transform: translateX(-50%) translateY(0); }
 
+        /* Modals */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; padding: 25px; overflow-y: auto; backdrop-filter: blur(5px); }
         .modal-content { background: #1e293b; padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); margin-top: 5vh; }
         .settings-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #1e293b; }
@@ -169,6 +112,7 @@
         .save-btn { width: 100%; padding: 15px; background: var(--gold); color: black; border: none; border-radius: 12px; font-weight: bold; font-size: 1em; cursor: pointer; margin-bottom: 10px; }
         .delete-btn { width: 100%; padding: 15px; background: transparent; color: var(--up); border: 1px solid var(--up); border-radius: 12px; font-weight: bold; font-size: 1em; cursor: pointer; }
 
+        /* GitHub Config */
         .gh-config { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
         .gh-config h3 { margin-top: 0; color: var(--accent); font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; }
 
@@ -207,6 +151,7 @@
             <button class="btn-icon" onclick="closeSettings()">✕</button>
         </div>
         
+        <!-- GITHUB CONTROL -->
         <div class="gh-config" id="gh-config-box">
             <h3>GitHub Server Steuerung</h3>
             <button id="monitoring-toggle-btn" class="btn-icon" style="width:100%; background:var(--text-dim); font-weight:bold; margin-bottom:15px; height:50px; color:white; border:none;" onclick="toggleGitHubWorkflow()">
@@ -252,13 +197,14 @@
     </div>
 </div>
 
+<!-- Firebase & Push Module -->
 <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
     import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
     import { getMessaging, getToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js';
 
-    // FIREBASE CONFIG
+    // DEINE FIREBASE CONFIG
     const firebaseConfig = {
       apiKey: "AIzaSyAf4nF5XItLd6CC3sdQ_ePEYduaSTdXjGI",
       authDomain: "ep-pro-c768d.firebaseapp.com",
@@ -300,7 +246,9 @@
         if (!currentUser) return;
         const jobRef = doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'alertJobs', currentUser.uid);
         await setDoc(jobRef, { 
-            userId: currentUser.uid, alerts: alerts, active: Object.keys(alerts).length > 0 
+            userId: currentUser.uid, 
+            alerts: alerts, 
+            active: Object.keys(alerts).length > 0 
         }, { merge: true });
         await setDoc(doc(db, 'artifacts', APP_ID_PATH, 'users', currentUser.uid, 'settings', 'alerts'), { alerts: alerts }, { merge: true });
     };
@@ -365,6 +313,7 @@
         { name: "Cloud-A", url: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, wrap: true }
     ];
 
+    // VOLLSTÄNDIGE RIDE LISTE
     const RIDE_PROPS = {
         "WODAN - Timburcoaster": { sr: true, lat: 48.2614, lon: 7.7192, best: 35 },
         "blue fire Megacoaster": { sr: true, lat: 48.2624, lon: 7.7185, best: 30 },
@@ -406,6 +355,7 @@
     let map, rideMarkers = [], userMarker;
     let currentEditRideId = null;
 
+    // --- GITHUB CONTROL ---
     let ghUser = localStorage.getItem('gh_user') || "";
     let ghRepo = localStorage.getItem('gh_repo') || "";
     let ghToken = localStorage.getItem('gh_token') || "";
@@ -425,7 +375,7 @@
         localStorage.setItem('gh_user', ghUser);
         localStorage.setItem('gh_repo', ghRepo);
         localStorage.setItem('gh_token', ghToken);
-        showToast("Gespeichert!");
+        showToast("GitHub Daten gespeichert!");
         checkWorkflowStatus();
     };
 
@@ -446,7 +396,7 @@
     }
 
     window.toggleGitHubWorkflow = async () => {
-        if(!ghUser || !ghRepo || !ghToken) return alert("Daten eingeben!");
+        if(!ghUser || !ghRepo || !ghToken) return alert("Bitte erst GitHub Daten unten eingeben und speichern!");
         const btn = document.getElementById('monitoring-toggle-btn');
         const isCurrentlyActive = btn.innerText.includes("AN");
         const newState = isCurrentlyActive ? "disable" : "enable";
@@ -459,10 +409,10 @@
                 headers: { 'Authorization': `token ${ghToken}`, 'Accept': 'application/vnd.github+json' }
             });
             if(resp.status === 204) {
-                showToast(isCurrentlyActive ? "Gestoppt!" : "Gestartet!");
+                showToast(isCurrentlyActive ? "Server gestoppt!" : "Server gestartet!");
                 updateSwitchUI(!isCurrentlyActive);
             } else { alert("Fehler beim Umschalten."); }
-        } catch(e) { alert("Fehler: " + e.message); }
+        } catch(e) { alert("Netzwerkfehler: " + e.message); }
         btn.disabled = false;
     };
 
@@ -479,6 +429,7 @@
         }
     }
 
+    // --- MAIN APP ---
     function findProps(name) {
         if (RIDE_PROPS[name]) return RIDE_PROPS[name];
         const keys = Object.keys(RIDE_PROPS);
@@ -486,19 +437,67 @@
         return { lat: 48.266, lon: 7.721, best: 10, isFallback: true };
     }
 
+    if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(pos => {
+            userPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+            if(map) updateUserOnMap();
+            window.renderList();
+        }, null, { enableHighAccuracy: true });
+    }
+
+    function updateUserOnMap() {
+        if (!map || !userPos) return;
+        if (!userMarker) {
+            userMarker = L.circleMarker([userPos.lat, userPos.lon], { 
+                radius: 9, color: '#fff', weight: 2, fillColor: '#38bdf8', fillOpacity: 1 
+            }).addTo(map).bindPopup("Dein Standort");
+        } else {
+            userMarker.setLatLng([userPos.lat, userPos.lon]);
+        }
+    }
+
+    async function refresh(manual = false) {
+        if (manual) document.getElementById('refresh-svg').classList.add('spinning');
+        const label = document.getElementById('proxy-label');
+        for (let p of PROXIES) {
+            try {
+                const resp = await fetch(p.url(QT_URL + "?cb=" + Date.now()), { signal: AbortSignal.timeout(7000) });
+                let data = p.wrap ? JSON.parse((await resp.json()).contents) : await resp.json();
+                if (data && data.lands) {
+                    parkData = {};
+                    data.lands.forEach(l => {
+                        parkData[l.name] = l.rides.map(r => ({
+                            ...r, props: findProps(r.name)
+                        }));
+                    });
+                    lastSync = Date.now();
+                    label.innerText = `Verbunden: ${p.name}`;
+                    window.renderList();
+                    if (map) updateMarkers();
+                    if (manual) showToast("Daten aktuell!");
+                    break;
+                }
+            } catch (e) { label.innerText = `${p.name} Error`; }
+        }
+        if(window.fetchHistory) await window.fetchHistory();
+        document.getElementById('refresh-svg').classList.remove('spinning');
+    }
+
+    // --- GRAPH LOGIC (Verbessert: Min/Max Anzeige & Höhe) ---
     function drawSparkline(data) {
         if (!data || data.length < 2) return '';
-        const width = 60; const height = 40; // Maße angepasst
-        const rightPadding = 30; // Platz für Text rechts
-        const totalWidth = width + rightPadding;
-        
-        const realMax = Math.max(...data);
-        const realMin = Math.min(...data);
-        const scaleMax = realMax > 0 ? realMax : 1; 
-        
+        const width = 100; const height = 50; 
+        const maxVal = Math.max(...data); // Dynamisch
+        const minVal = Math.min(...data);
+        const padding = 12; 
+
+        // Verhindert Division durch Null wenn alle Werte gleich sind
+        const range = maxVal - minVal;
+        const scale = range > 0 ? range : 1;
+
         const points = data.map((val, i) => {
             const x = (i / (data.length - 1)) * width;
-            const y = height - ((val / scaleMax) * height);
+            const y = (height - padding) - ((val - minVal) / scale) * (height - 2*padding);
             return `${x},${y}`;
         }).join(' ');
 
@@ -507,11 +506,11 @@
         const color = last < prev ? 'var(--down)' : (last > prev ? 'var(--up)' : 'var(--accent)');
 
         return `
-            <svg width="${totalWidth}" height="${height}" class="history-graph" style="overflow:visible">
+            <svg width="${width + 30}" height="${height}" class="history-graph" style="overflow:visible">
+                <text x="${width + 5}" y="12" class="graph-text" fill="var(--text-dim)">${maxVal}</text>
+                <text x="${width + 5}" y="${height - 2}" class="graph-text" fill="var(--text-dim)">${minVal}</text>
                 <polyline points="${points}" class="graph-line" stroke="${color}"/>
-                <circle cx="${width}" cy="${height - ((last/scaleMax)*height)}" r="3" fill="${color}" />
-                <text x="${totalWidth}" y="10" class="graph-text" text-anchor="end" fill="var(--text-dim)">${realMax}</text>
-                <text x="${totalWidth}" y="${height}" class="graph-text" text-anchor="end" fill="var(--text-dim)">${realMin}</text>
+                <circle cx="${width}" cy="${(height - padding) - ((last - minVal) / scale) * (height - 2*padding)}" r="3" fill="${color}" />
             </svg>
         `;
     }
@@ -519,6 +518,7 @@
     window.updateGraphs = () => {
         if (!window.historyPoints || window.historyPoints.length === 0) return;
         const sortedPoints = window.historyPoints.sort((a,b) => a.t - b.t);
+
         document.querySelectorAll('.card').forEach(card => {
             const rideId = card.getAttribute('data-ride-id');
             if (!rideId) return;
@@ -546,10 +546,13 @@
                 return `<div class="card" data-ride-id="${r.id}" style="${isDeal ? 'border-color:var(--gold)' : ''}">
                     <div class="settings-gear ${alertActive ? 'active' : ''}" onclick="openRideSettings('${r.id}', '${r.name.replace(/'/g, "\\'")}')">⚙️</div>
                     ${alertActive ? `<div class="settings-label">🔔 < ${threshold}m</div>` : ''}
+                    
                     <div>${r.props.sr ? '<span class="badge badge-sr">SR</span>' : ''}${isDeal ? '<span class="badge badge-deal">Deal</span>' : ''}</div>
                     <div class="ride-name">${r.name}</div>
                     <div class="wait-time" style="color:${r.is_open ? (r.wait_time > 40 ? 'var(--up)' : 'var(--accent)') : 'var(--text-dim)'}">${r.is_open ? r.wait_time : '✕'}</div>
                     ${d ? `<div class="dist-tag">📍 ${d}</div>` : ''}
+                    
+                    <!-- Graph Placeholder -->
                     <div id="graph-container-${r.id}" style="position: absolute; bottom: 8px; right: 8px;"></div>
                 </div>`;
             }).join('')}</div></div>`;
