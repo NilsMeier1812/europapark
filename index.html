@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EP Strategie Ultra (Compact Graph)</title>
+    <title>EP Strategie Ultra (Map & Nav)</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b1120">
@@ -59,7 +59,13 @@
         #list-view { padding: 15px; height: calc(100vh - 75px); overflow-y: auto; box-sizing: border-box; }
         #map-view { width: 100vw; height: calc(100vh - 75px); display: none; position: relative; }
         
+        /* Map Reset Button Style */
         .map-overlay-btn { position: absolute; right: 20px; bottom: 30px; z-index: 1001; background: var(--accent); color: white; border: none; border-radius: 50%; width: 55px; height: 55px; font-size: 1.5em; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+
+        /* Leaflet Popup Styles (Schwarz auf Weiß für Lesbarkeit auf heller Karte) */
+        .leaflet-popup-content-wrapper { border-radius: 12px; font-family: sans-serif; }
+        .leaflet-popup-content b { font-size: 1.1em; color: #333; }
+        .nav-link { display: inline-block; margin-top: 8px; padding: 6px 12px; background: #4285F4; color: white !important; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 0.9em; }
 
         /* Cards */
         .land-section { margin-top: 20px; }
@@ -89,7 +95,7 @@
         /* GRAPH STYLES */
         .history-graph {
             position: absolute; bottom: 8px; right: 8px;
-            width: 75px; height: 35px; /* Kompakt */
+            width: 80px; height: 40px; 
             pointer-events: none;
         }
         .graph-line { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)); }
@@ -151,7 +157,6 @@
             <button class="btn-icon" onclick="closeSettings()">✕</button>
         </div>
         
-        <!-- GITHUB CONTROL -->
         <div class="gh-config" id="gh-config-box">
             <h3>GitHub Server Steuerung</h3>
             <button id="monitoring-toggle-btn" class="btn-icon" style="width:100%; background:var(--text-dim); font-weight:bold; margin-bottom:15px; height:50px; color:white; border:none;" onclick="toggleGitHubWorkflow()">
@@ -313,7 +318,6 @@
         } catch (err) { console.error("Push Fehler:", err); }
     };
 
-    // HISTORY FETCHING
     window.fetchHistory = async () => {
         try {
             const historyRef = doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'history_rolling', 'main');
@@ -510,10 +514,10 @@
     // --- GRAPH LOGIC (Verbessert: Min/Max Anzeige & Höhe) ---
     function drawSparkline(data) {
         if (!data || data.length < 2) return '';
-        const width = 50; const height = 35; 
+        const width = 100; const height = 50; 
         const maxVal = Math.max(...data); 
         const minVal = Math.min(...data);
-        const padding = 5; 
+        const padding = 12; 
 
         // Verhindert Division durch Null
         const range = maxVal - minVal;
@@ -530,11 +534,11 @@
         const color = last < prev ? 'var(--down)' : (last > prev ? 'var(--up)' : 'var(--accent)');
 
         return `
-            <svg width="${width + 25}" height="${height}" class="history-graph" style="overflow:visible">
-                <text x="${width + 5}" y="10" class="graph-text" fill="var(--text-dim)">${maxVal}</text>
-                <text x="${width + 5}" y="${height}" class="graph-text" fill="var(--text-dim)">${minVal}</text>
+            <svg width="${width + 30}" height="${height}" class="history-graph" style="overflow:visible">
+                <text x="${width + 5}" y="12" class="graph-text" fill="var(--text-dim)">${maxVal}</text>
+                <text x="${width + 5}" y="${height - 2}" class="graph-text" fill="var(--text-dim)">${minVal}</text>
                 <polyline points="${points}" class="graph-line" stroke="${color}"/>
-                <circle cx="${width}" cy="${(height - padding) - ((last - minVal) / scale) * (height - 2*padding)}" r="2" fill="${color}" />
+                <circle cx="${width}" cy="${(height - padding) - ((last - minVal) / scale) * (height - 2*padding)}" r="3" fill="${color}" />
             </svg>
         `;
     }
@@ -594,9 +598,21 @@
             parkData[l].forEach(r => {
                 if (selectedIds.length > 0 && !selectedIds.includes(r.id)) return;
                 if (r.props.isFallback) return; 
+                
+                // POPUP CONTENT: Name, Wartezeit und Google Maps Link
+                const popupContent = `
+                    <div style="text-align:center;">
+                        <b>${r.name}</b><br>
+                        Wartezeit: ${r.is_open ? r.wait_time + " min" : "Geschlossen"}<br>
+                        <a href="https://www.google.com/maps/dir/?api=1&destination=${r.props.lat},${r.props.lon}" target="_blank" class="nav-link">
+                            🚗 Navigation starten
+                        </a>
+                    </div>
+                `;
+
                 const color = r.is_open ? (r.wait_time > 30 ? 'var(--up)' : (r.wait_time > 15 ? 'var(--accent)' : 'var(--down)')) : '#444';
                 const icon = L.divIcon({ className: 'custom-icon', html: `<div class="ride-marker" style="background:${color}; ${r.wait_time <= r.props.best ? 'border-color:var(--gold)':''}">${r.is_open ? r.wait_time : '✕'}</div>`, iconSize: [34, 34] });
-                rideMarkers.push(L.marker([r.props.lat, r.props.lon], {icon}).addTo(map).bindPopup(r.name));
+                rideMarkers.push(L.marker([r.props.lat, r.props.lon], {icon}).addTo(map).bindPopup(popupContent));
             });
         }
         updateUserOnMap();
@@ -609,7 +625,28 @@
     window.deleteRideAlert = async () => { if(!currentEditRideId) return; delete window.enabledAlerts[currentEditRideId]; localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts)); if(window.syncAlertsToCloud) await window.syncAlertsToCloud(window.enabledAlerts); window.renderList(); closeRideModal(); }
 
     function toggleFav(id) { if (selectedIds.includes(id)) selectedIds = selectedIds.filter(i => i !== id); else selectedIds.push(id); localStorage.setItem('ep_favs', JSON.stringify(selectedIds)); window.renderList(); }
-    function switchView(v) { document.getElementById('list-view').style.display = v==='list'?'block':'none'; document.getElementById('map-view').style.display = v==='map'?'block':'none'; document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active')); document.getElementById('btn-' + v).classList.add('active'); if (v==='map') { if (!map) { map = L.map('map-view', {zoomControl: false}).setView([48.266, 7.721], 16); L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map); } setTimeout(() => { map.invalidateSize(); updateMarkers(); updateUserOnMap(); }, 200); } }
+    
+    function switchView(v) { 
+        document.getElementById('list-view').style.display = v==='list'?'block':'none'; 
+        document.getElementById('map-view').style.display = v==='map'?'block':'none'; 
+        document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active')); 
+        document.getElementById('btn-' + v).classList.add('active'); 
+        if (v==='map') { 
+            if (!map) { 
+                map = L.map('map-view', {zoomControl: false}).setView([48.266, 7.721], 16); 
+                
+                // MAP LAYERS
+                const light = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' });
+                const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri' });
+                light.addTo(map);
+
+                const baseMaps = { "Karte (Hell)": light, "Satellit": sat };
+                L.control.layers(baseMaps).addTo(map);
+            } 
+            setTimeout(() => { map.invalidateSize(); updateMarkers(); updateUserOnMap(); }, 200); 
+        } 
+    }
+    
     function calcDist(lat1, lon1, lat2, lon2) { const R = 6371; const dLat = (lat2-lat1)*Math.PI/180; const dLon = (lon2-lon1)*Math.PI/180; const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2; return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1)+"km"; }
     function openSettings() { document.getElementById('settings-modal').style.display='block'; window.renderSettings(); loadGitHubConfig(); }
     function closeSettings() { document.getElementById('settings-modal').style.display='none'; }
