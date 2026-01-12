@@ -1,0 +1,9 @@
+{
+  "name": "ep-backend",
+  "version": "1.0.0",
+  "dependencies": {
+    "firebase-admin": "^11.11.0",
+    "axios": "^1.6.0"
+  }
+}
+
