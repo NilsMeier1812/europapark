@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EP Strategie Ultra (Map & Nav)</title>
+    <title>EP Strategie Ultra (Compact Graph)</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b1120">
@@ -59,10 +59,9 @@
         #list-view { padding: 15px; height: calc(100vh - 75px); overflow-y: auto; box-sizing: border-box; }
         #map-view { width: 100vw; height: calc(100vh - 75px); display: none; position: relative; }
         
-        /* Map Reset Button Style */
         .map-overlay-btn { position: absolute; right: 20px; bottom: 30px; z-index: 1001; background: var(--accent); color: white; border: none; border-radius: 50%; width: 55px; height: 55px; font-size: 1.5em; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
 
-        /* Leaflet Popup Styles (Schwarz auf Weiß für Lesbarkeit auf heller Karte) */
+        /* Leaflet Popup Styles */
         .leaflet-popup-content-wrapper { border-radius: 12px; font-family: sans-serif; }
         .leaflet-popup-content b { font-size: 1.1em; color: #333; }
         .nav-link { display: inline-block; margin-top: 8px; padding: 6px 12px; background: #4285F4; color: white !important; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 0.9em; }
@@ -92,14 +91,14 @@
         .badge-deal { background: var(--gold); color: #000; }
         .dist-tag { font-size: 0.6em; color: var(--accent); margin-top: 5px; }
 
-        /* GRAPH STYLES */
+        /* GRAPH STYLES - Kompakt */
         .history-graph {
             position: absolute; bottom: 8px; right: 8px;
-            width: 80px; height: 40px; 
+            width: 75px; height: 35px; /* Wieder kleiner */
             pointer-events: none;
         }
         .graph-line { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)); }
-        .graph-text { font-size: 9px; fill: var(--text-dim); font-weight: bold; font-family: monospace; }
+        .graph-text { font-size: 8px; fill: var(--text-dim); font-weight: bold; font-family: monospace; }
 
         .ride-marker { width: 34px; height: 34px; border-radius: 50%; border: 2.5px solid white; color: white; font-weight: 900; font-size: 13px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 
@@ -209,7 +208,7 @@
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
     import { getMessaging, getToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js';
 
-    // DEINE ECHTEN KEYS
+    // DEINE FIREBASE CONFIG
     const firebaseConfig = {
       apiKey: "AIzaSyAf4nF5XItLd6CC3sdQ_ePEYduaSTdXjGI",
       authDomain: "ep-pro-c768d.firebaseapp.com",
@@ -219,7 +218,6 @@
       appId: "1:678617107748:web:11c73addee5db76f26f7b1",
       measurementId: "G-1MBSKD8ZH4"
     };
-
     const VAPID_KEY = "BFp2JrM56fRBkdVd6izSz7slAIP513-LhE3LgV049a8-9QVxzpIUjsqFU6bgNTQOjFPZR8yXfYymRGad0IbvPKo";
     const APP_ID_PATH = 'ep-pro-strategie';
     
@@ -305,10 +303,8 @@
         try {
             const permission = await Notification.requestPermission();
             if (permission !== 'granted') return alert("Bitte Benachrichtigungen erlauben.");
-            
             const reg = await navigator.serviceWorker.register(getSWPath(), { scope: './' });
             const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
-            
             if (token && currentUser) {
                 const jobRef = doc(db, 'artifacts', APP_ID_PATH, 'public', 'data', 'alertJobs', currentUser.uid);
                 await setDoc(jobRef, { fcmToken: token }, { merge: true });
@@ -342,6 +338,7 @@
         { name: "Cloud-A", url: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, wrap: true }
     ];
 
+    // RIDE LISTE
     const RIDE_PROPS = {
         "WODAN - Timburcoaster": { sr: true, lat: 48.2614, lon: 7.7192, best: 35 },
         "blue fire Megacoaster": { sr: true, lat: 48.2624, lon: 7.7185, best: 30 },
@@ -511,15 +508,15 @@
         document.getElementById('refresh-svg').classList.remove('spinning');
     }
 
-    // --- GRAPH LOGIC (Verbessert: Min/Max Anzeige & Höhe) ---
+    // --- GRAPH LOGIC ---
     function drawSparkline(data) {
         if (!data || data.length < 2) return '';
-        const width = 100; const height = 50; 
+        const width = 50; const height = 30; // Kleiner
         const maxVal = Math.max(...data); 
         const minVal = Math.min(...data);
-        const padding = 12; 
+        const padding = 5; 
+        const totalWidth = width + 25; // + Text
 
-        // Verhindert Division durch Null
         const range = maxVal - minVal;
         const scale = range > 0 ? range : 1;
 
@@ -534,11 +531,11 @@
         const color = last < prev ? 'var(--down)' : (last > prev ? 'var(--up)' : 'var(--accent)');
 
         return `
-            <svg width="${width + 30}" height="${height}" class="history-graph" style="overflow:visible">
-                <text x="${width + 5}" y="12" class="graph-text" fill="var(--text-dim)">${maxVal}</text>
-                <text x="${width + 5}" y="${height - 2}" class="graph-text" fill="var(--text-dim)">${minVal}</text>
+            <svg width="${totalWidth}" height="${height}" class="history-graph" style="overflow:visible">
+                <text x="${width + 3}" y="8" class="graph-text" fill="var(--text-dim)">${maxVal}</text>
+                <text x="${width + 3}" y="${height-2}" class="graph-text" fill="var(--text-dim)">${minVal}</text>
                 <polyline points="${points}" class="graph-line" stroke="${color}"/>
-                <circle cx="${width}" cy="${(height - padding) - ((last - minVal) / scale) * (height - 2*padding)}" r="3" fill="${color}" />
+                <circle cx="${width}" cy="${(height - padding) - ((last - minVal) / scale) * (height - 2*padding)}" r="2" fill="${color}" />
             </svg>
         `;
     }
@@ -622,10 +619,9 @@
     window.openRideSettings = (id, name) => { currentEditRideId = id; document.getElementById('alert-ride-name').innerText = name; document.getElementById('alert-threshold').value = window.enabledAlerts[id] || 20; document.getElementById('ride-alert-modal').style.display = 'block'; }
     window.closeRideModal = () => { document.getElementById('ride-alert-modal').style.display = 'none'; currentEditRideId = null; }
     window.saveRideAlert = async () => { if(!currentEditRideId) return; const val = parseInt(document.getElementById('alert-threshold').value); if(isNaN(val)) return; window.enabledAlerts[currentEditRideId] = val; localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts)); if(window.syncAlertsToCloud) await window.syncAlertsToCloud(window.enabledAlerts); window.renderList(); closeRideModal(); showToast(`Alarm < ${val} min`); }
-    window.deleteRideAlert = async () => { if(!currentEditRideId) return; delete window.enabledAlerts[currentEditRideId]; localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts)); if(window.syncAlertsToCloud) await window.syncAlertsToCloud(window.enabledAlerts); window.renderList(); closeRideModal(); }
+    window.deleteRideAlert = async () => { if(!currentEditRideId) return; delete window.enabledAlerts[currentEditRideId]; localStorage.setItem('ep_alerts', JSON.stringify(window.enabledAlerts)); if(window.syncAlertsToCloud) await window.syncAlertsToCloud(window.enabledAlerts); window.renderList(); closeRideModal(); showToast("Alarm gelöscht."); }
 
     function toggleFav(id) { if (selectedIds.includes(id)) selectedIds = selectedIds.filter(i => i !== id); else selectedIds.push(id); localStorage.setItem('ep_favs', JSON.stringify(selectedIds)); window.renderList(); }
-    
     function switchView(v) { 
         document.getElementById('list-view').style.display = v==='list'?'block':'none'; 
         document.getElementById('map-view').style.display = v==='map'?'block':'none'; 
@@ -634,12 +630,10 @@
         if (v==='map') { 
             if (!map) { 
                 map = L.map('map-view', {zoomControl: false}).setView([48.266, 7.721], 16); 
-                
                 // MAP LAYERS
                 const light = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' });
                 const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri' });
                 light.addTo(map);
-
                 const baseMaps = { "Karte (Hell)": light, "Satellit": sat };
                 L.control.layers(baseMaps).addTo(map);
             } 
