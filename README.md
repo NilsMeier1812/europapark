@@ -52,7 +52,16 @@ Jedes Familienmitglied macht das auf dem eigenen Handy – Alarme sind pro Gerä
 | „Gute Zeit“ | Wartezeit liegt unter dem üblichen Wert der Bahn (in `src/rides.js` einstellbar) |
 | Karte | alle Bahnen mit Wartezeit, eigener Standort, „Hinlaufen“-Link zu Google Maps |
 | Favoriten ★ | Filter „Favoriten“ blendet alles andere aus |
-| Push-Alarme 🔔 | einmal beim Unterschreiten der Grenze – kein Spam alle 5 Minuten |
+| Push-Alarme 🔔 | einmal beim Unterschreiten der Grenze – kein Spam alle 5 Minuten, gelten bis Tagesende |
+| Fahrten-Tagebuch 📒 | ✓ an jeder Bahn zählt eine Fahrt. Steht man an einer Bahn, schlägt die App sie oben vor („📍 Bei WODAN? ✓ Gefahren“). Nach 5 Min kommt der Vorschlag wieder – dann mit „zuletzt 12:20 Uhr“ und „✓ Nochmal“. Tagesbilanz, Favoriten noch offen, Archiv früherer Besuche |
+| Offline | bei Funkloch startet die App mit dem letzten Stand |
+
+Das Tagebuch wird nur auf dem jeweiligen Handy gespeichert (nicht auf dem Server).
+Wer die App löscht oder die Websitedaten leert, verliert es.
+
+**Warum nicht vollautomatisch per GPS?** Web-Apps bekommen den Standort nur, solange sie geöffnet sind –
+mit dem Handy in der Tasche gibt es keine Daten. Außerdem liegen viele Bahnen dicht beieinander und in
+Hallen gibt es kein GPS. Deshalb schlägt die App nur vor, und ein Tipp bestätigt.
 
 ---
 
@@ -62,6 +71,7 @@ Jedes Familienmitglied macht das auf dem eigenen Handy – Alarme sind pro Gerä
 public/            Website (wird 1:1 ausgeliefert)
   index.html       Gerüst
   app.js           komplette App-Logik im Browser
+  diary.js         Fahrten-Tagebuch (Zählen, Vorschlag „Bei …?“, Tagesbilanz)
   style.css        Aussehen
   sw.js            Service Worker – zeigt Push-Nachrichten an
 src/

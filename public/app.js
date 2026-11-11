@@ -1,12 +1,13 @@
 // EP Wartezeiten – Frontend
 // Holt alle Daten von /api/waits (unser eigener Worker) – keine Proxys, kein Firebase.
 
+import * as diary from "./diary.js";
+
 const $ = (sel) => document.querySelector(sel);
 const REFRESH_MS = 60_000;
 const PARK_CENTER = [48.2655, 7.7212];
 
-const BERLIN_DATE = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" });
-const berlinDay = (t = Date.now()) => BERLIN_DATE.format(new Date(t));
+const { berlinDay } = diary;
 
 // ---------- Zustand ----------
 const store = {
@@ -37,6 +38,9 @@ const state = {
   sort: store.get("ep_sort", "land"),
   onlyFavs: store.get("ep_only_favs", false),
   onlyOpen: store.get("ep_only_open", false),
+  hideDone: store.get("ep_hide_done", false),
+  log: store.get("ep_log", []), // Fahrten-Tagebuch: [{ id, n: Name, t: Zeitpunkt }]
+  snoozed: store.get("ep_snooze", {}), // rideId → bis wann nicht mehr vorschlagen
   pos: null,
   view: "list",
 };
@@ -51,13 +55,22 @@ if (!deviceId) {
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const fmtTime = (t) => new Date(t).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 
-function toast(msg, isError = false) {
+function toast(msg, isError = false, action = null) {
   const t = $("#toast");
   t.textContent = msg;
+  if (action) {
+    const b = document.createElement("button");
+    b.textContent = action.label;
+    b.onclick = () => {
+      t.classList.remove("show");
+      action.run();
+    };
+    t.append(b);
+  }
   t.classList.toggle("error", isError);
   t.classList.add("show");
   clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => t.classList.remove("show"), 3000);
+  toast.timer = setTimeout(() => t.classList.remove("show"), action ? 5000 : 3000);
 }
 
 function distanceM(a, b) {
@@ -144,6 +157,7 @@ async function load(manual = false) {
     body.offline = res.headers.get("X-Offline") === "1";
     state.data = body;
     render();
+    updateNearby();
     if (manual) toast(body.offline ? "Kein Netz – zeige letzten Stand" : "Aktualisiert", body.offline);
   } catch (e) {
     console.error(e);
@@ -165,6 +179,10 @@ function visibleRides() {
   let rides = state.data?.rides ?? [];
   if (state.onlyFavs && state.favs.size) rides = rides.filter((r) => state.favs.has(r.id));
   if (state.onlyOpen) rides = rides.filter((r) => r.open);
+  if (state.hideDone) {
+    const done = diary.countsForDay(state.log);
+    rides = rides.filter((r) => !done.has(r.id));
+  }
   return rides;
 }
 
@@ -185,6 +203,13 @@ function render() {
   $("#chip-favs").classList.toggle("active", state.onlyFavs);
   $("#chip-favs").hidden = state.favs.size === 0;
   $("#chip-open").classList.toggle("active", state.onlyOpen);
+  const today = diary.countsForDay(state.log);
+  const todayTotal = [...today.values()].reduce((a, b) => a + b, 0);
+  if (!todayTotal) state.hideDone = false;
+  $("#chip-done").hidden = todayTotal === 0;
+  $("#chip-done").classList.toggle("active", state.hideDone);
+  $("#chip-diary").textContent = todayTotal ? `📒 Tagebuch · ${todayTotal}` : "📒 Tagebuch";
+  state.doneToday = today;
   $("#sort").value = state.sort;
 
   const rides = visibleRides();
@@ -219,16 +244,14 @@ function card(r) {
   const alertMax = state.alerts[r.id];
   const hasAlert = alertMax != null;
   const fav = state.favs.has(r.id);
+  const done = state.doneToday?.get(r.id) ?? 0;
   const badges = [
+    done ? `<span class="badge done">✓ ${done}× heute</span>` : "",
     r.sr ? `<span class="badge sr">SR</span>` : "",
     isGood(r) ? `<span class="badge good">Gute Zeit</span>` : "",
     r.virtual ? `<span class="badge vl">VirtualLine</span>` : "",
   ].join("");
-  return `<article class="card ${isGood(r) ? "good" : ""} ${r.open ? "" : "closed"}">
-    <div class="card-actions">
-      <button class="${fav ? "on" : ""}" data-fav="${r.id}" aria-label="Favorit">★</button>
-      <button class="${hasAlert ? "on" : ""}" data-alert="${r.id}" aria-label="Alarm">🔔${hasAlert ? `<span class="alert-max">≤${alertMax}</span>` : ""}</button>
-    </div>
+  return `<article class="card ${isGood(r) ? "good" : ""} ${r.open ? "" : "closed"} ${done ? "done" : ""}">
     <div class="badges">${badges}</div>
     <div class="name">${esc(r.name)}</div>
     <div class="wait-row">
@@ -236,7 +259,133 @@ function card(r) {
       ${sparkline(series)}
     </div>
     <div class="meta"><span class="dist">${fmtDistance(distanceOf(r))}</span><span>${todayRange(series)}</span></div>
+    <div class="card-actions">
+      <button class="${fav ? "on" : ""}" data-fav="${r.id}" aria-label="Favorit">★</button>
+      <button class="${hasAlert ? "on" : ""}" data-alert="${r.id}" aria-label="Alarm">🔔${hasAlert ? `<span class="alert-max">≤${alertMax}</span>` : ""}</button>
+      ${r.virtual ? "" : `<button class="log ${done ? "on" : ""}" data-log="${r.id}" aria-label="Gefahren">✓${done ? ` ${done}` : ""}</button>`}
+    </div>
   </article>`;
+}
+
+// ---------- Fahrten-Tagebuch ----------
+function saveLog() {
+  store.set("ep_log", state.log);
+  store.set("ep_snooze", state.snoozed);
+}
+
+function logRide(id) {
+  const ride = state.data?.rides.find((r) => r.id === id);
+  if (!ride) return;
+  const t = Date.now();
+  state.log = diary.addEntry(state.log, ride, t);
+  state.snoozed[id] = t + diary.SNOOZE_AFTER_LOG_MS;
+  saveLog();
+  render();
+  updateNearby();
+  if ($("#diary-dialog").open) renderDiary();
+  const n = diary.countsForDay(state.log).get(id);
+  if ("vibrate" in navigator) navigator.vibrate(30);
+  toast(`✓ ${ride.name}${n > 1 ? ` (${n}× heute)` : ""}`, false, {
+    label: "Rückgängig",
+    run: () => removeLogEntry(t),
+  });
+}
+
+function removeLogEntry(t) {
+  const entry = state.log.find((e) => e.t === t);
+  state.log = diary.removeEntry(state.log, t);
+  if (entry) delete state.snoozed[entry.id];
+  saveLog();
+  render();
+  updateNearby();
+  if ($("#diary-dialog").open) renderDiary();
+}
+
+/** Leiste „📍 Bei WODAN? ✓ Gefahren“, wenn man gerade an einer Bahn steht. */
+function updateNearby() {
+  const bar = $("#nearby");
+  const list = state.data ? diary.suggestions(state.data.rides, state.pos, distanceM, state.snoozed) : [];
+  bar.hidden = list.length === 0;
+  if (!list.length) return;
+  bar.innerHTML =
+    list
+      .map(
+        (r) => {
+          // Schon heute gefahren? Dann deutlich zeigen, wann – damit nichts versehentlich doppelt zählt
+          const last = diary.lastRide(state.log, r.id);
+          const n = state.doneToday?.get(r.id) ?? 0;
+          const info = last
+            ? `<span class="nearby-last">zuletzt ${fmtTime(last)} Uhr (${fmtAgo(last)}) · ${n}× heute</span>`
+            : "";
+          return `<span class="nearby-item"><span class="nearby-name">📍 Bei ${esc(r.name)}?${info}</span>
+        <button class="nearby-yes" data-log="${r.id}">${last ? "✓ Nochmal" : "✓ Gefahren"}</button>
+        <button class="nearby-no" data-snooze="${r.id}" aria-label="Nicht hier">✕</button></span>`;
+        },
+      )
+      .join("");
+}
+
+function fmtAgo(t) {
+  const min = Math.round((Date.now() - t) / 60_000);
+  if (min < 1) return "gerade eben";
+  if (min < 60) return `vor ${min} Min`;
+  const h = Math.floor(min / 60);
+  return `vor ${h} Std${min % 60 ? ` ${min % 60} Min` : ""}`;
+}
+
+const fmtDate = (day) =>
+  new Date(`${day}T12:00:00`).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" });
+
+function entryList(entries) {
+  return entries
+    .map(
+      (e) =>
+        `<div class="row"><span><span class="time">${fmtTime(e.t)}</span> ${esc(e.n)}</span><button type="button" data-remove-log="${e.t}" aria-label="Eintrag löschen">✕</button></div>`,
+    )
+    .join("");
+}
+
+function renderDiary() {
+  const sum = diary.summary(state.log);
+  const el = $("#diary-content");
+  const html = [];
+  if (!sum.count) {
+    html.push(`<p class="hint">Heute noch keine Fahrten eingetragen. Tippe nach einer Fahrt auf <b>✓</b> an der Bahn – oder auf
+      <b>✓ Gefahren</b>, wenn die App oben „📍 Bei …?“ vorschlägt (passiert automatisch, wenn du an einer Bahn stehst).</p>`);
+  } else {
+    html.push(`<div class="stats">
+      <div><b>${sum.count}</b><span>Fahrten</span></div>
+      <div><b>${sum.distinct}</b><span>verschiedene Bahnen</span></div>
+      <div><b>${fmtTime(sum.first)}</b><span>erste Fahrt</span></div>
+    </div>`);
+    html.push(`<h3>Am häufigsten</h3><div class="top">${sum.top
+      .slice(0, 5)
+      .map((x) => `<span class="pill">${esc(x.name)} <b>${x.n}×</b></span>`)
+      .join("")}</div>`);
+  }
+  const missing = [...state.favs]
+    .map((id) => state.data?.rides.find((r) => r.id === id))
+    .filter((r) => r && !sum.top.some((x) => x.id === r.id));
+  if (state.favs.size) {
+    html.push(
+      `<h3>Favoriten noch offen</h3>` +
+        (missing.length
+          ? `<div class="top">${missing.map((r) => `<span class="pill">${esc(r.name)}${r.open ? ` · ${r.wait} Min` : " · zu"}</span>`).join("")}</div>`
+          : `<p class="hint">Alle Favoriten heute schon gefahren 🎉</p>`),
+    );
+  }
+  if (sum.count) html.push(`<h3>Verlauf heute</h3><div class="alert-list">${entryList([...sum.entries].reverse())}</div>`);
+
+  const past = diary.pastDays(state.log);
+  if (past.length) {
+    html.push(`<h3>Frühere Besuche</h3>`);
+    for (const d of past) {
+      html.push(`<details class="past"><summary>${fmtDate(d.day)} · <b>${d.count} Fahrten</b>, ${d.distinct} Bahnen</summary>
+        <div class="top">${d.top.map((x) => `<span class="pill">${esc(x.name)} <b>${x.n}×</b></span>`).join("")}</div>
+        <div class="alert-list">${entryList(d.entries)}</div></details>`);
+    }
+  }
+  el.innerHTML = html.join("");
 }
 
 // ---------- Karte ----------
@@ -257,6 +406,7 @@ function initMap() {
   osm.addTo(map);
   L.control.layers({ Karte: osm, Satellit: sat }).addTo(map);
   markerLayer = L.layerGroup().addTo(map);
+
 }
 
 function updateMarkers() {
@@ -278,7 +428,8 @@ function updateMarkers() {
       .bindPopup(
         `<b>${esc(r.name)}</b><br>${r.open ? `${r.wait} Min Wartezeit` : "Geschlossen"}` +
           `${distanceOf(r) != null ? `<br>${fmtDistance(distanceOf(r))}` : ""}` +
-          `<br><a class="popup-nav" href="${nav}" target="_blank" rel="noopener">🚶 Hinlaufen</a>`,
+          `<br><a class="popup-nav" href="${nav}" target="_blank" rel="noopener">🚶 Hinlaufen</a>` +
+          ` <button class="popup-nav popup-log" data-log="${r.id}">✓ Gefahren</button>`,
       )
       .addTo(markerLayer);
   }
@@ -315,10 +466,11 @@ function switchView(view) {
 if ("geolocation" in navigator) {
   navigator.geolocation.watchPosition(
     (p) => {
-      const pos = { lat: p.coords.latitude, lon: p.coords.longitude };
+      const pos = { lat: p.coords.latitude, lon: p.coords.longitude, accuracy: p.coords.accuracy };
       const moved = state.pos ? distanceM(state.pos, pos) : Infinity;
       state.pos = pos;
       if (map) updateUserMarker();
+      updateNearby();
       // Liste nur neu zeichnen, wenn man sich merklich bewegt hat (spart Akku, Taps gehen nicht verloren)
       if (moved > 25) render();
     },
@@ -504,6 +656,37 @@ $("#content").addEventListener("click", (e) => {
   if (alertBtn) openAlertDialog(Number(alertBtn.dataset.alert));
 });
 
+// ✓-Buttons gibt es in Karten, in der „Bei …?“-Leiste und in Karten-Popups
+document.addEventListener("click", (e) => {
+  const log = e.target.closest("[data-log]");
+  if (log) {
+    logRide(Number(log.dataset.log));
+    map?.closePopup();
+    return;
+  }
+  const snooze = e.target.closest("[data-snooze]");
+  if (snooze) {
+    state.snoozed[snooze.dataset.snooze] = Date.now() + diary.SNOOZE_AFTER_DISMISS_MS;
+    saveLog();
+    updateNearby();
+    return;
+  }
+  const remove = e.target.closest("[data-remove-log]");
+  if (remove) {
+    if (confirm("Diese Fahrt aus dem Tagebuch löschen?")) removeLogEntry(Number(remove.dataset.removeLog));
+  }
+});
+
+$("#chip-done").onclick = () => {
+  state.hideDone = !state.hideDone;
+  store.set("ep_hide_done", state.hideDone);
+  render();
+};
+$("#chip-diary").onclick = () => {
+  renderDiary();
+  $("#diary-dialog").showModal();
+};
+
 $("#alert-dialog").querySelectorAll("[data-step]").forEach((b) => {
   b.onclick = () => {
     const input = $("#alert-max");
@@ -568,6 +751,7 @@ if ("serviceWorker" in navigator) {
 }
 load();
 setInterval(() => document.visibilityState === "visible" && load(), REFRESH_MS);
+setInterval(updateNearby, 30_000); // „vor x Min“ aktuell halten, Vorschlag nach 5 Min wieder zeigen
 // Alarme/Abo beim Start einmal abgleichen (z. B. wenn das Handy das Abo erneuert hat)
 if (Object.keys(state.alerts).length) getSubscription().then((s) => s && syncDevice()).catch(() => {});
 document.querySelectorAll("dialog [data-close]").forEach((b) => (b.onclick = () => b.closest("dialog").close("cancel")));
