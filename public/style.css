@@ -94,8 +94,6 @@ header {
 .badge.sr { background: #6366f1; }
 .badge.good { background: var(--gold); color: #000; }
 .badge.vl { background: #0e7490; }
-.badge.done { background: rgba(34, 197, 94, 0.18); color: var(--green); }
-.card.done .name { color: #cbd5e1; }
 .name { font-size: 0.85rem; font-weight: 600; line-height: 1.25; margin: 6px 0 4px; min-height: 2.5em; }
 .wait-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; margin-top: auto; }
 .wait { font-size: 2.2rem; font-weight: 900; line-height: 1; }
