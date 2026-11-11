@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>EP Wartezeiten</title>
+  <meta name="description" content="Live-Wartezeiten, Karte und Push-Alarme für den Europa-Park">
+  <meta name="theme-color" content="#0b1120">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="EP Wartezeiten">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<header>
+  <button class="icon-btn" id="settings-btn" aria-label="Einstellungen">⚙️</button>
+  <div class="title">
+    <div class="park">EUROPA-PARK</div>
+    <div id="status" class="status">Lade …</div>
+  </div>
+  <div class="segmented" role="tablist">
+    <button id="tab-list" class="active" role="tab">Liste</button>
+    <button id="tab-map" role="tab">Karte</button>
+  </div>
+  <button class="icon-btn" id="refresh-btn" aria-label="Aktualisieren">
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+  </button>
+</header>
+
+<main>
+  <section id="list-view">
+    <div class="toolbar">
+      <select id="sort" aria-label="Sortierung">
+        <option value="land">Nach Bereich</option>
+        <option value="wait">Kürzeste Wartezeit</option>
+        <option value="dist">Nächste zuerst</option>
+      </select>
+      <button class="chip" id="chip-favs">★ Favoriten</button>
+      <button class="chip" id="chip-open">Nur offene</button>
+    </div>
+    <div id="banner" class="banner" hidden></div>
+    <div id="content"></div>
+    <footer>
+      Daten: <a href="https://queue-times.com/parks/51" target="_blank" rel="noopener">Powered by Queue-Times.com</a>
+      · Karte © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>
+    </footer>
+  </section>
+  <section id="map-view" hidden>
+    <div id="map"></div>
+    <button class="map-fab" id="locate-btn" aria-label="Zu meinem Standort">🎯</button>
+  </section>
+</main>
+
+<!-- Alarm für eine Bahn -->
+<dialog id="alert-dialog">
+  <form method="dialog">
+    <div class="dialog-head">
+      <h2 id="alert-title">Bahn</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Schließen">✕</button>
+    </div>
+    <label for="alert-max">Benachrichtige mich, wenn die Wartezeit höchstens so lang ist:</label>
+    <div class="stepper">
+      <button type="button" data-step="-5">−5</button>
+      <input type="number" id="alert-max" min="0" max="300" step="5" inputmode="numeric">
+      <span>Min</span>
+      <button type="button" data-step="5">+5</button>
+    </div>
+    <p id="alert-push-hint" class="hint" hidden></p>
+    <button class="primary" id="alert-save" value="save">🔔 Alarm speichern</button>
+    <button class="danger" id="alert-delete" value="delete">Alarm löschen</button>
+  </form>
+</dialog>
+
+<!-- Einstellungen -->
+<dialog id="settings-dialog">
+  <form method="dialog">
+    <div class="dialog-head">
+      <h2>Einstellungen</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Schließen">✕</button>
+    </div>
+
+    <h3>Push-Benachrichtigungen</h3>
+    <p id="push-status" class="hint"></p>
+    <button type="button" class="primary" id="push-enable">🔔 Push aktivieren</button>
+    <button type="button" class="secondary" id="push-test">📨 Test-Push senden</button>
+
+    <h3>Deine Alarme</h3>
+    <div id="alert-list" class="alert-list"></div>
+
+    <h3>Tipps</h3>
+    <ul class="tips">
+      <li><b>iPhone:</b> Push geht nur, wenn die Seite über <i>Teilen → Zum Home-Bildschirm</i> als App installiert und von dort geöffnet wird.</li>
+      <li><b>Alarme</b> stellst du über die 🔔 an jeder Bahn ein. Du bekommst eine Nachricht, sobald die Wartezeit unter deine Grenze fällt – und erst wieder, wenn sie zwischendurch darüber lag.</li>
+      <li><b>★</b> markiert Favoriten, „Favoriten“ oben blendet den Rest aus.</li>
+      <li><b>Gute Zeit</b> = Wartezeit liegt unter dem üblichen Wert der Bahn. <b>SR</b> = Single-Rider.</li>
+    </ul>
+  </form>
+</dialog>
+
+<div id="toast" role="status"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script type="module" src="/app.js"></script>
+</body>
+</html>

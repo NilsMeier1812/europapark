@@ -1,0 +1,20 @@
+// Konfiguration für Cloudflare Workers – siehe README.md
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "europapark",
+  "main": "src/worker.js",
+  "compatibility_date": "2025-09-01",
+
+  // Die Website (HTML, JS, CSS, Icons)
+  "assets": { "directory": "./public", "binding": "ASSETS" },
+
+  // Speicher für Wartezeit-Verlauf, Push-Abos und Alarme (SQLite, im Gratis-Plan enthalten)
+  "durable_objects": { "bindings": [{ "name": "PARK", "class_name": "Park" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Park"] }],
+
+  // Alle 5 Minuten Wartezeiten holen und Alarme prüfen.
+  // (Jeweils 1 Minute nach queue-times.com, die um :00, :05, :10 … aktualisieren.)
+  "triggers": { "crons": ["1,6,11,16,21,26,31,36,41,46,51,56 * * * *"] },
+
+  "observability": { "enabled": true }
+}

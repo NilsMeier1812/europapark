@@ -1,13 +1,14 @@
 {
-  "name": "ep-backend",
-  "version": "1.0.0",
-  "description": "Backend Logic for EP Strategy App",
-  "dependencies": {
-    "firebase-admin": "^11.11.0",
-    "axios": "0.27.2",
-    "protobufjs": "^7.2.4"
+  "name": "europapark",
+  "private": true,
+  "description": "Live-Wartezeiten, Karte und Push-Alarme für den Europa-Park – alles in einem Cloudflare Worker",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node --test"
   },
-  "engines": {
-    "node": "20.x"
+  "devDependencies": {
+    "wrangler": "^4.0.0"
   }
 }
