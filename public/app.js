@@ -310,11 +310,27 @@ function updateNearby() {
   bar.innerHTML =
     list
       .map(
-        (r) => `<span class="nearby-item"><span class="nearby-name">📍 Bei ${esc(r.name)}?</span>
-        <button class="nearby-yes" data-log="${r.id}">✓ Gefahren</button>
-        <button class="nearby-no" data-snooze="${r.id}" aria-label="Nicht hier">✕</button></span>`,
+        (r) => {
+          // Schon heute gefahren? Dann deutlich zeigen, wann – damit nichts versehentlich doppelt zählt
+          const last = diary.lastRide(state.log, r.id);
+          const n = state.doneToday?.get(r.id) ?? 0;
+          const info = last
+            ? `<span class="nearby-last">zuletzt ${fmtTime(last)} Uhr (${fmtAgo(last)}) · ${n}× heute</span>`
+            : "";
+          return `<span class="nearby-item"><span class="nearby-name">📍 Bei ${esc(r.name)}?${info}</span>
+        <button class="nearby-yes" data-log="${r.id}">${last ? "✓ Nochmal" : "✓ Gefahren"}</button>
+        <button class="nearby-no" data-snooze="${r.id}" aria-label="Nicht hier">✕</button></span>`;
+        },
       )
       .join("");
+}
+
+function fmtAgo(t) {
+  const min = Math.round((Date.now() - t) / 60_000);
+  if (min < 1) return "gerade eben";
+  if (min < 60) return `vor ${min} Min`;
+  const h = Math.floor(min / 60);
+  return `vor ${h} Std${min % 60 ? ` ${min % 60} Min` : ""}`;
 }
 
 const fmtDate = (day) =>
@@ -735,6 +751,7 @@ if ("serviceWorker" in navigator) {
 }
 load();
 setInterval(() => document.visibilityState === "visible" && load(), REFRESH_MS);
+setInterval(updateNearby, 30_000); // „vor x Min“ aktuell halten, Vorschlag nach 5 Min wieder zeigen
 // Alarme/Abo beim Start einmal abgleichen (z. B. wenn das Handy das Abo erneuert hat)
 if (Object.keys(state.alerts).length) getSubscription().then((s) => s && syncDevice()).catch(() => {});
 document.querySelectorAll("dialog [data-close]").forEach((b) => (b.onclick = () => b.closest("dialog").close("cancel")));

@@ -6,7 +6,7 @@ export const NEAR_M = 60;
 /** Schlechtere GPS-Genauigkeit (Meter) → lieber nichts vorschlagen. */
 export const MAX_ACCURACY_M = 75;
 /** Nach „Gefahren“ bzw. „✕“ wird dieselbe Bahn so lange nicht nochmal vorgeschlagen. */
-export const SNOOZE_AFTER_LOG_MS = 45 * 60_000;
+export const SNOOZE_AFTER_LOG_MS = 5 * 60_000; // kurz – zweimal hintereinander fahren ist normal
 export const SNOOZE_AFTER_DISMISS_MS = 30 * 60_000;
 
 const BERLIN_DATE = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" });
@@ -19,6 +19,13 @@ export function addEntry(log, ride, t = Date.now()) {
 
 export function removeEntry(log, t) {
   return log.filter((e) => e.t !== t);
+}
+
+/** Zeitpunkt der letzten Fahrt auf dieser Bahn heute (oder null). */
+export function lastRide(log, id, day = berlinDay()) {
+  let last = null;
+  for (const e of log) if (e.id === id && berlinDay(e.t) === day && (last === null || e.t > last)) last = e.t;
+  return last;
 }
 
 /** Map rideId → Anzahl Fahrten an einem Tag */

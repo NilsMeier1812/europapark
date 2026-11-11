@@ -170,6 +170,7 @@ button:disabled { opacity: 0.5; cursor: default; }
 }
 .nearby-item { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 0; }
 .nearby-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.nearby-last { display: block; font-size: 0.72rem; font-weight: 500; color: #86efac; overflow: hidden; text-overflow: ellipsis; }
 .nearby-yes { border: 0; background: var(--green); color: #022c16; font-weight: 800; padding: 8px 12px; border-radius: 10px; white-space: nowrap; }
 .nearby-no { border: 0; background: none; color: var(--dim); width: 32px; height: 32px; }
 

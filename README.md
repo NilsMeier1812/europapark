@@ -53,7 +53,7 @@ Jedes Familienmitglied macht das auf dem eigenen Handy – Alarme sind pro Gerä
 | Karte | alle Bahnen mit Wartezeit, eigener Standort, „Hinlaufen“-Link zu Google Maps |
 | Favoriten ★ | Filter „Favoriten“ blendet alles andere aus |
 | Push-Alarme 🔔 | einmal beim Unterschreiten der Grenze – kein Spam alle 5 Minuten, gelten bis Tagesende |
-| Fahrten-Tagebuch 📒 | ✓ an jeder Bahn zählt eine Fahrt. Steht man an einer Bahn, schlägt die App sie oben vor („📍 Bei WODAN? ✓ Gefahren“). Tagesbilanz, Favoriten noch offen, Archiv früherer Besuche |
+| Fahrten-Tagebuch 📒 | ✓ an jeder Bahn zählt eine Fahrt. Steht man an einer Bahn, schlägt die App sie oben vor („📍 Bei WODAN? ✓ Gefahren“). Nach 5 Min kommt der Vorschlag wieder – dann mit „zuletzt 12:20 Uhr“ und „✓ Nochmal“. Tagesbilanz, Favoriten noch offen, Archiv früherer Besuche |
 | Offline | bei Funkloch startet die App mit dem letzten Stand |
 
 Das Tagebuch wird nur auf dem jeweiligen Handy gespeichert (nicht auf dem Server).

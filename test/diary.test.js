@@ -60,3 +60,11 @@ test("Archiv: frühere Tage, neueste zuerst, ohne heute", () => {
   const past = diary.pastDays(log, "2026-07-02");
   assert.deepEqual(past.map((p) => p.day), ["2026-07-01", "2025-06-01"]);
 });
+
+test("lastRide liefert die letzte Fahrt des Tages", () => {
+  const t = Date.parse("2026-07-01T10:00:00Z");
+  const log = [{ id: 5602, n: "WODAN", t }, { id: 5602, n: "WODAN", t: t + 600_000 }, { id: 5603, n: "bf", t: t + 900_000 }];
+  assert.equal(diary.lastRide(log, 5602, diary.berlinDay(t)), t + 600_000);
+  assert.equal(diary.lastRide(log, 9999, diary.berlinDay(t)), null);
+  assert.equal(diary.lastRide(log, 5602, "2026-07-02"), null);
+});
