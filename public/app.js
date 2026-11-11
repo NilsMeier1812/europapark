@@ -5,6 +5,9 @@ const $ = (sel) => document.querySelector(sel);
 const REFRESH_MS = 60_000;
 const PARK_CENTER = [48.2655, 7.7212];
 
+const BERLIN_DATE = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" });
+const berlinDay = (t = Date.now()) => BERLIN_DATE.format(new Date(t));
+
 // ---------- Zustand ----------
 const store = {
   get(key, fallback) {
@@ -26,6 +29,8 @@ const state = {
   data: null,
   favs: new Set(store.get("ep_favs", []).map(Number)),
   alerts: (() => {
+    // Alarme gelten nur für den heutigen Tag (wie auf dem Server)
+    if (store.get("ep_alerts_day", null) !== berlinDay()) return {};
     const a = store.get("ep_alerts", {});
     return a && !Array.isArray(a) ? a : {};
   })(),
@@ -89,7 +94,12 @@ const isGood = (r) => r.open && !r.virtual && r.wait <= r.good;
 function seriesFor(id) {
   const h = state.data?.history;
   if (!h) return [];
-  return h.waits.map((w, i) => ({ t: h.t[i], v: w[id] ?? null }));
+  // nur Punkte von heute – sonst hängt morgens noch der Vorabend im Graphen (einmal pro Datenstand berechnen)
+  if (h.todayIdx === undefined) {
+    const today = berlinDay();
+    h.todayIdx = h.t.map((t, i) => (berlinDay(t) === today ? i : -1)).filter((i) => i >= 0);
+  }
+  return h.todayIdx.map((i) => ({ t: h.t[i], v: h.waits[i][id] ?? null }));
 }
 
 function sparkline(series) {
@@ -131,9 +141,10 @@ async function load(manual = false) {
     const res = await fetch("/api/waits", { cache: "no-store" });
     const body = await res.json();
     if (!res.ok) throw new Error(body.error || `Fehler ${res.status}`);
+    body.offline = res.headers.get("X-Offline") === "1";
     state.data = body;
     render();
-    if (manual) toast("Aktualisiert");
+    if (manual) toast(body.offline ? "Kein Netz – zeige letzten Stand" : "Aktualisiert", body.offline);
   } catch (e) {
     console.error(e);
     setStatus(`Keine Verbindung (${e.message})`, "error");
@@ -163,7 +174,8 @@ function render() {
 
   const age = Date.now() - d.updated;
   const anyOpen = d.rides.some((r) => r.open);
-  if (d.error) setStatus(`Stand ${fmtTime(d.updated)} · Abruf fehlgeschlagen`, "error");
+  if (d.offline) setStatus(`Offline · Stand ${fmtTime(d.updated)} Uhr`, "stale");
+  else if (d.error) setStatus(`Stand ${fmtTime(d.updated)} · Abruf fehlgeschlagen`, "error");
   else setStatus(`Stand ${fmtTime(d.updated)} Uhr`, anyOpen && age > 15 * 60_000 ? "stale" : "");
 
   const banner = $("#banner");
@@ -192,7 +204,8 @@ function render() {
       state.sort === "dist" && state.pos
         ? (r) => distanceOf(r) ?? Infinity
         : (r) => r.wait;
-    const sorted = [...rides].sort((a, b) => (b.open - a.open) || key(a) - key(b));
+    // offene zuerst, VirtualLine-Einträge (Wartezeit immer 0) ans Ende
+    const sorted = [...rides].sort((a, b) => b.open - a.open || a.virtual - b.virtual || key(a) - key(b));
     html.push(`<div class="grid flat">${sorted.map(card).join("")}</div>`);
   }
   if (!rides.length) html.push(`<p class="hint">Keine Bahnen für diesen Filter.</p>`);
@@ -269,6 +282,10 @@ function updateMarkers() {
       )
       .addTo(markerLayer);
   }
+  updateUserMarker();
+}
+
+function updateUserMarker() {
   if (state.pos) {
     const ll = [state.pos.lat, state.pos.lon];
     if (!userMarker) {
@@ -298,8 +315,12 @@ function switchView(view) {
 if ("geolocation" in navigator) {
   navigator.geolocation.watchPosition(
     (p) => {
-      state.pos = { lat: p.coords.latitude, lon: p.coords.longitude };
-      render();
+      const pos = { lat: p.coords.latitude, lon: p.coords.longitude };
+      const moved = state.pos ? distanceM(state.pos, pos) : Infinity;
+      state.pos = pos;
+      if (map) updateUserMarker();
+      // Liste nur neu zeichnen, wenn man sich merklich bewegt hat (spart Akku, Taps gehen nicht verloren)
+      if (moved > 25) render();
     },
     () => {},
     { enableHighAccuracy: true, maximumAge: 15_000 },
@@ -322,7 +343,8 @@ async function syncDevice() {
   const res = await fetch(`/api/devices/${deviceId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ subscription: sub ? sub.toJSON() : null, alerts: state.alerts }),
+    // Abo nur mitschicken, wenn vorhanden – sonst behält der Server das bisherige
+    body: JSON.stringify({ ...(sub && { subscription: sub.toJSON() }), alerts: state.alerts }),
   });
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `Fehler ${res.status}`);
 }
@@ -418,6 +440,7 @@ function openAlertDialog(id) {
 
 async function saveAlerts(message) {
   store.set("ep_alerts", state.alerts);
+  store.set("ep_alerts_day", berlinDay());
   render();
   renderAlertList();
   try {

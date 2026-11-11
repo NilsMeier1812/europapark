@@ -2,6 +2,11 @@ import { RIDES, LANDS } from "./rides.js";
 
 export const QUEUE_TIMES_URL = "https://queue-times.com/parks/51/queue_times.json";
 
+/** Kalendertag in Deutschland als "YYYY-MM-DD" – Alarme gelten nur für den Tag, an dem sie gestellt wurden. */
+export function berlinDay(t = Date.now()) {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date(t));
+}
+
 /** Nach einem Alarm frühestens nach dieser Zeit erneut für dieselbe Bahn benachrichtigen. */
 export const ALERT_COOLDOWN_MS = 20 * 60 * 1000;
 
@@ -64,7 +69,8 @@ export function validateDevice(body) {
     if (!Number.isInteger(rideId) || !Number.isFinite(minutes) || minutes < 0 || minutes > 300) continue;
     alerts[rideId] = minutes;
   }
-  let subscription = null;
+  // undefined = Abo nicht mitgeschickt → das gespeicherte bleibt erhalten; null = ausdrücklich löschen
+  let subscription = body.subscription === null ? null : undefined;
   const s = body.subscription;
   if (s) {
     if (typeof s.endpoint !== "string" || !s.endpoint.startsWith("https://") || s.endpoint.length > 1000)
