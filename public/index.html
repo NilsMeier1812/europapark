@@ -34,6 +34,8 @@
   </button>
 </header>
 
+<div id="nearby" class="nearby" hidden></div>
+
 <main>
   <section id="list-view">
     <div class="toolbar">
@@ -44,6 +46,8 @@
       </select>
       <button class="chip" id="chip-favs">★ Favoriten</button>
       <button class="chip" id="chip-open">Nur offene</button>
+      <button class="chip" id="chip-done" hidden>Ungefahrene</button>
+      <button class="chip" id="chip-diary">📒 Tagebuch</button>
     </div>
     <div id="banner" class="banner" hidden></div>
     <div id="content"></div>
@@ -78,6 +82,17 @@
   </form>
 </dialog>
 
+<!-- Fahrten-Tagebuch -->
+<dialog id="diary-dialog">
+  <form method="dialog">
+    <div class="dialog-head">
+      <h2>📒 Tagebuch</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Schließen">✕</button>
+    </div>
+    <div id="diary-content"></div>
+  </form>
+</dialog>
+
 <!-- Einstellungen -->
 <dialog id="settings-dialog">
   <form method="dialog">
@@ -98,6 +113,7 @@
     <ul class="tips">
       <li><b>iPhone:</b> Push geht nur, wenn die Seite über <i>Teilen → Zum Home-Bildschirm</i> als App installiert und von dort geöffnet wird.</li>
       <li><b>Alarme</b> stellst du über die 🔔 an jeder Bahn ein. Du bekommst eine Nachricht, sobald die Wartezeit unter deine Grenze fällt – und erst wieder, wenn sie zwischendurch darüber lag. Alarme gelten bis Tagesende und verfallen dann automatisch.</li>
+      <li><b>✓</b> trägt eine Fahrt ins Tagebuch ein. Stehst du an einer Bahn, schlägt die App sie oben automatisch vor („📍 Bei …?“) – ein Tipp genügt.</li>
       <li><b>★</b> markiert Favoriten, „Favoriten“ oben blendet den Rest aus.</li>
       <li><b>Gute Zeit</b> = Wartezeit liegt unter dem üblichen Wert der Bahn. <b>SR</b> = Single-Rider.</li>
     </ul>
