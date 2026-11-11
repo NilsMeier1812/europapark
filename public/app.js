@@ -38,7 +38,6 @@ const state = {
   sort: store.get("ep_sort", "land"),
   onlyFavs: store.get("ep_only_favs", false),
   onlyOpen: store.get("ep_only_open", false),
-  hideDone: store.get("ep_hide_done", false),
   log: store.get("ep_log", []), // Fahrten-Tagebuch: [{ id, n: Name, t: Zeitpunkt }]
   snoozed: store.get("ep_snooze", {}), // rideId → bis wann nicht mehr vorschlagen
   pos: null,
@@ -179,10 +178,6 @@ function visibleRides() {
   let rides = state.data?.rides ?? [];
   if (state.onlyFavs && state.favs.size) rides = rides.filter((r) => state.favs.has(r.id));
   if (state.onlyOpen) rides = rides.filter((r) => r.open);
-  if (state.hideDone) {
-    const done = diary.countsForDay(state.log);
-    rides = rides.filter((r) => !done.has(r.id));
-  }
   return rides;
 }
 
@@ -205,9 +200,6 @@ function render() {
   $("#chip-open").classList.toggle("active", state.onlyOpen);
   const today = diary.countsForDay(state.log);
   const todayTotal = [...today.values()].reduce((a, b) => a + b, 0);
-  if (!todayTotal) state.hideDone = false;
-  $("#chip-done").hidden = todayTotal === 0;
-  $("#chip-done").classList.toggle("active", state.hideDone);
   $("#chip-diary").textContent = todayTotal ? `📒 Tagebuch · ${todayTotal}` : "📒 Tagebuch";
   state.doneToday = today;
   $("#sort").value = state.sort;
@@ -246,12 +238,11 @@ function card(r) {
   const fav = state.favs.has(r.id);
   const done = state.doneToday?.get(r.id) ?? 0;
   const badges = [
-    done ? `<span class="badge done">✓ ${done}× heute</span>` : "",
     r.sr ? `<span class="badge sr">SR</span>` : "",
     isGood(r) ? `<span class="badge good">Gute Zeit</span>` : "",
     r.virtual ? `<span class="badge vl">VirtualLine</span>` : "",
   ].join("");
-  return `<article class="card ${isGood(r) ? "good" : ""} ${r.open ? "" : "closed"} ${done ? "done" : ""}">
+  return `<article class="card ${isGood(r) ? "good" : ""} ${r.open ? "" : "closed"}">
     <div class="badges">${badges}</div>
     <div class="name">${esc(r.name)}</div>
     <div class="wait-row">
@@ -677,11 +668,6 @@ document.addEventListener("click", (e) => {
   }
 });
 
-$("#chip-done").onclick = () => {
-  state.hideDone = !state.hideDone;
-  store.set("ep_hide_done", state.hideDone);
-  render();
-};
 $("#chip-diary").onclick = () => {
   renderDiary();
   $("#diary-dialog").showModal();
