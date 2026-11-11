@@ -5,7 +5,7 @@
 // mit eingebauter SQLite-Datenbank. Keine externe Datenbank, keine API-Keys.
 
 import { DurableObject } from "cloudflare:workers";
-import { QUEUE_TIMES_URL, parseQueueTimes, enrich, evaluateAlert, validateDevice } from "./logic.js";
+import { QUEUE_TIMES_URL, parseQueueTimes, enrich, evaluateAlert, validateDevice, berlinDay } from "./logic.js";
 import { generateVapidKeys, sendPush } from "./webpush.js";
 
 const MAX_AGE_MS = 3 * 60 * 1000; // ältere Daten werden beim Öffnen der App neu geholt
@@ -29,6 +29,12 @@ export class Park extends DurableObject {
         PRIMARY KEY (device_id, ride_id)
       );
     `);
+    // Migration v2: Alarme bekommen ihren Kalendertag (gelten nur bis Tagesende)
+    const cols = this.sql.exec("PRAGMA table_info(alerts)").toArray().map((c) => c.name);
+    if (!cols.includes("day")) {
+      this.sql.exec("ALTER TABLE alerts ADD COLUMN day TEXT NOT NULL DEFAULT ''");
+      this.sql.exec("UPDATE alerts SET day = ?", berlinDay());
+    }
     this.refreshing = null;
   }
 
@@ -71,6 +77,8 @@ export class Park extends DurableObject {
   async #checkAlerts(snap) {
     const rides = new Map(snap.rides.map((r) => [r.id, r]));
     const now = Date.now();
+    // Alarme von gestern oder früher löschen – sonst gehen sie beim nächsten Besuch zur Öffnung los
+    this.sql.exec("DELETE FROM alerts WHERE day <> ?", berlinDay(now));
     const rows = this.sql
       .exec(
         `SELECT a.*, d.endpoint, d.p256dh, d.auth FROM alerts a
@@ -165,16 +173,25 @@ export class Park extends DurableObject {
     }
     if (origin?.startsWith("https://")) this.setKV("origin", origin);
 
-    this.sql.exec(
-      `INSERT INTO devices (id, endpoint, p256dh, auth, updated) VALUES (?, ?, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET endpoint = excluded.endpoint, p256dh = excluded.p256dh,
-         auth = excluded.auth, updated = excluded.updated`,
-      id,
-      subscription?.endpoint ?? null,
-      subscription?.keys.p256dh ?? null,
-      subscription?.keys.auth ?? null,
-      Date.now(),
-    );
+    if (subscription === undefined) {
+      // Kein Abo mitgeschickt: vorhandenes behalten, nur Zeitstempel aktualisieren
+      this.sql.exec(
+        `INSERT INTO devices (id, updated) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET updated = excluded.updated`,
+        id,
+        Date.now(),
+      );
+    } else {
+      this.sql.exec(
+        `INSERT INTO devices (id, endpoint, p256dh, auth, updated) VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET endpoint = excluded.endpoint, p256dh = excluded.p256dh,
+           auth = excluded.auth, updated = excluded.updated`,
+        id,
+        subscription?.endpoint ?? null,
+        subscription?.keys.p256dh ?? null,
+        subscription?.keys.auth ?? null,
+        Date.now(),
+      );
+    }
 
     const existing = new Map(
       this.sql.exec("SELECT ride_id, max FROM alerts WHERE device_id = ?", id).toArray().map((r) => [r.ride_id, r.max]),
@@ -183,16 +200,22 @@ export class Park extends DurableObject {
       if (!(rideId in alerts)) this.sql.exec("DELETE FROM alerts WHERE device_id = ? AND ride_id = ?", id, rideId);
     }
     for (const [rideId, max] of Object.entries(alerts)) {
-      if (existing.get(Number(rideId)) === max) continue; // unverändert → Status behalten
+      if (existing.get(Number(rideId)) === max) {
+        // unverändert → Status behalten, nur Tag auffrischen
+        this.sql.exec("UPDATE alerts SET day = ? WHERE device_id = ? AND ride_id = ?", berlinDay(), id, Number(rideId));
+        continue;
+      }
       this.sql.exec(
-        `INSERT INTO alerts (device_id, ride_id, max, satisfied, last_sent) VALUES (?, ?, ?, 0, 0)
-         ON CONFLICT(device_id, ride_id) DO UPDATE SET max = excluded.max, satisfied = 0, last_sent = 0`,
+        `INSERT INTO alerts (device_id, ride_id, max, satisfied, last_sent, day) VALUES (?, ?, ?, 0, 0, ?)
+         ON CONFLICT(device_id, ride_id) DO UPDATE SET max = excluded.max, satisfied = 0, last_sent = 0, day = excluded.day`,
         id,
         Number(rideId),
         max,
+        berlinDay(),
       );
     }
-    return { ok: true, alerts: Object.keys(alerts).length, push: Boolean(subscription) };
+    const push = this.sql.exec("SELECT endpoint FROM devices WHERE id = ?", id).one().endpoint != null;
+    return { ok: true, alerts: Object.keys(alerts).length, push };
   }
 
   async deleteDevice(id) {

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseQueueTimes, enrich, evaluateAlert, validateDevice, ALERT_COOLDOWN_MS } from "../src/logic.js";
+import { parseQueueTimes, enrich, evaluateAlert, validateDevice, berlinDay, ALERT_COOLDOWN_MS } from "../src/logic.js";
 
 const sample = {
   lands: [
@@ -62,4 +62,15 @@ test("validateDevice filtert Unsinn", () => {
   const v = validateDevice({ alerts: { 5602: "20", abc: 5, 5604: -3, 5605: 1e9 }, subscription: null });
   assert.deepEqual(v.alerts, { 5602: 20 });
   assert.throws(() => validateDevice({ subscription: { endpoint: "http://evil", keys: { p256dh: "a", auth: "b" } } }));
+});
+
+test("validateDevice: fehlendes Abo bleibt undefined (Server behält das alte)", () => {
+  assert.equal(validateDevice({ alerts: {} }).subscription, undefined);
+  assert.equal(validateDevice({ alerts: {}, subscription: null }).subscription, null);
+});
+
+test("berlinDay rechnet in deutscher Zeit", () => {
+  // 23:30 UTC im Sommer = 01:30 in Berlin am nächsten Tag
+  assert.equal(berlinDay(Date.parse("2026-07-01T23:30:00Z")), "2026-07-02");
+  assert.equal(berlinDay(Date.parse("2026-12-01T22:30:00Z")), "2026-12-01");
 });
