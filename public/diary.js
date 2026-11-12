@@ -80,3 +80,15 @@ export function pastDays(log, today = berlinDay()) {
   const days = [...new Set(log.map((e) => berlinDay(e.t)))].filter((d) => d !== today);
   return days.sort().reverse().map((d) => summary(log, d));
 }
+
+/**
+ * Zeitpunkt für eine nachgetragene Fahrt aus Datum ("YYYY-MM-DD") und Uhrzeit ("HH:MM") in Handy-Ortszeit.
+ * Wirft einen Fehler bei ungültigen Angaben oder Zeitpunkten in der Zukunft.
+ */
+export function backfillTime(date, time, now = Date.now()) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date ?? "") || !/^\d{2}:\d{2}$/.test(time ?? "")) throw new Error("Bitte Tag und Uhrzeit angeben");
+  const t = new Date(`${date}T${time}:00`).getTime();
+  if (!Number.isFinite(t)) throw new Error("Ungültiges Datum");
+  if (t > now + 60_000) throw new Error("Die Fahrt liegt in der Zukunft");
+  return t;
+}

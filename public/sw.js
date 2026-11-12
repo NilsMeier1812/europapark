@@ -3,7 +3,7 @@
 // Außerdem: Offline-Modus für Funklöcher im Park. Alles wird zuerst frisch aus dem Netz geholt;
 // klappt das nicht (schnell genug), kommt die zuletzt gespeicherte Version.
 
-const CACHE = "ep-v3";
+const CACHE = "ep-v4";
 const SHELL = ["/", "/app.js", "/diary.js", "/style.css", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon.svg"];
 
 self.addEventListener("install", (event) => {

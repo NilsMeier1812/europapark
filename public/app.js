@@ -67,6 +67,12 @@ function toast(msg, isError = false, action = null) {
     t.append(b);
   }
   t.classList.toggle("error", isError);
+  // Ist ein Dialog offen, ist alles außerhalb davon nicht antippbar → Hinweis in den Dialog hängen
+  const openDialog = [...document.querySelectorAll("dialog[open]")].at(-1);
+  const parent = openDialog ?? document.body;
+  if (t.parentElement !== parent) parent.append(t);
+  t.classList.remove("show");
+  void t.offsetWidth; // Animation neu starten
   t.classList.add("show");
   clearTimeout(toast.timer);
   toast.timer = setTimeout(() => t.classList.remove("show"), action ? 5000 : 3000);
@@ -339,14 +345,14 @@ function entryList(entries) {
 function renderDiary() {
   const sum = diary.summary(state.log);
   const el = $("#diary-content");
-  const html = [];
+  const html = [`<button type="button" class="secondary backfill-btn" id="backfill-open">＋ Fahrt nachtragen</button>`];
   if (!sum.count) {
     html.push(`<p class="hint">Heute noch keine Fahrten eingetragen. Tippe nach einer Fahrt auf <b>✓</b> an der Bahn – oder auf
       <b>✓ Gefahren</b>, wenn die App oben „📍 Bei …?“ vorschlägt (passiert automatisch, wenn du an einer Bahn stehst).</p>`);
   } else {
     html.push(`<div class="stats">
-      <div><b>${sum.count}</b><span>Fahrten</span></div>
-      <div><b>${sum.distinct}</b><span>verschiedene Bahnen</span></div>
+      <div><b>${sum.count}</b><span>${sum.count === 1 ? "Fahrt" : "Fahrten"}</span></div>
+      <div><b>${sum.distinct}</b><span>${sum.distinct === 1 ? "Bahn" : "verschiedene Bahnen"}</span></div>
       <div><b>${fmtTime(sum.first)}</b><span>erste Fahrt</span></div>
     </div>`);
     html.push(`<h3>Am häufigsten</h3><div class="top">${sum.top
@@ -371,7 +377,7 @@ function renderDiary() {
   if (past.length) {
     html.push(`<h3>Frühere Besuche</h3>`);
     for (const d of past) {
-      html.push(`<details class="past"><summary>${fmtDate(d.day)} · <b>${d.count} Fahrten</b>, ${d.distinct} Bahnen</summary>
+      html.push(`<details class="past"><summary>${fmtDate(d.day)} · <b>${d.count} ${d.count === 1 ? "Fahrt" : "Fahrten"}</b>, ${d.distinct} ${d.distinct === 1 ? "Bahn" : "Bahnen"}</summary>
         <div class="top">${d.top.map((x) => `<span class="pill">${esc(x.name)} <b>${x.n}×</b></span>`).join("")}</div>
         <div class="alert-list">${entryList(d.entries)}</div></details>`);
     }
@@ -647,6 +653,52 @@ $("#content").addEventListener("click", (e) => {
   if (alertBtn) openAlertDialog(Number(alertBtn.dataset.alert));
 });
 
+// ---------- Fahrt nachtragen ----------
+function openBackfill() {
+  // Alle Bahnen (ohne VirtualLine) + Bahnen aus dem Tagebuch, die es heute evtl. nicht mehr gibt
+  const rides = new Map();
+  for (const r of state.data?.rides ?? []) if (!r.virtual) rides.set(r.id, r.name);
+  for (const e of state.log) if (!rides.has(e.id)) rides.set(e.id, e.n);
+  const sorted = [...rides].sort((a, b) => a[1].localeCompare(b[1], "de"));
+  const opt = ([id, name]) => `<option value="${id}">${esc(name)}</option>`;
+  const favs = sorted.filter(([id]) => state.favs.has(id));
+  $("#backfill-ride").innerHTML =
+    (favs.length ? `<optgroup label="★ Favoriten">${favs.map(opt).join("")}</optgroup><optgroup label="Alle Bahnen">` : "") +
+    sorted.map(opt).join("") +
+    (favs.length ? "</optgroup>" : "");
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  $("#backfill-date").value = today;
+  $("#backfill-date").max = today;
+  $("#backfill-time").value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  $("#backfill-dialog").showModal();
+}
+
+$("#backfill-dialog").addEventListener("close", () => {
+  if ($("#backfill-dialog").returnValue !== "save") return;
+  $("#backfill-dialog").returnValue = "";
+  const sel = $("#backfill-ride");
+  const id = Number(sel.value);
+  const name = sel.selectedOptions[0]?.textContent;
+  if (!id || !name) return;
+  let t;
+  try {
+    t = diary.backfillTime($("#backfill-date").value, $("#backfill-time").value);
+  } catch (e) {
+    return toast(e.message, true);
+  }
+  // Einträge werden über den Zeitstempel gelöscht → muss eindeutig sein
+  while (state.log.some((e) => e.t === t)) t++;
+  state.log = diary.addEntry(state.log, { id, name }, t);
+  saveLog();
+  render();
+  updateNearby();
+  if ($("#diary-dialog").open) renderDiary();
+  const day = berlinDay(t) === berlinDay() ? "" : ` am ${new Date(t).toLocaleDateString("de-DE")}`;
+  toast(`✓ ${name} nachgetragen (${fmtTime(t)} Uhr${day})`, false, { label: "Rückgängig", run: () => removeLogEntry(t) });
+});
+
 // ✓-Buttons gibt es in Karten, in der „Bei …?“-Leiste und in Karten-Popups
 document.addEventListener("click", (e) => {
   const log = e.target.closest("[data-log]");
@@ -662,6 +714,7 @@ document.addEventListener("click", (e) => {
     updateNearby();
     return;
   }
+  if (e.target.closest("#backfill-open")) return openBackfill();
   const remove = e.target.closest("[data-remove-log]");
   if (remove) {
     if (confirm("Diese Fahrt aus dem Tagebuch löschen?")) removeLogEntry(Number(remove.dataset.removeLog));
