@@ -92,6 +92,29 @@
   </form>
 </dialog>
 
+<!-- Fahrt nachtragen -->
+<dialog id="backfill-dialog">
+  <form method="dialog">
+    <div class="dialog-head">
+      <h2>Fahrt nachtragen</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Schließen">✕</button>
+    </div>
+    <label for="backfill-ride">Bahn</label>
+    <select id="backfill-ride" class="field"></select>
+    <div class="field-row">
+      <div>
+        <label for="backfill-date">Tag</label>
+        <input type="date" id="backfill-date" class="field">
+      </div>
+      <div>
+        <label for="backfill-time">Uhrzeit</label>
+        <input type="time" id="backfill-time" class="field">
+      </div>
+    </div>
+    <button class="primary" value="save">✓ Eintragen</button>
+  </form>
+</dialog>
+
 <!-- Einstellungen -->
 <dialog id="settings-dialog">
   <form method="dialog">

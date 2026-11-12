@@ -68,3 +68,11 @@ test("lastRide liefert die letzte Fahrt des Tages", () => {
   assert.equal(diary.lastRide(log, 9999, diary.berlinDay(t)), null);
   assert.equal(diary.lastRide(log, 5602, "2026-07-02"), null);
 });
+
+test("backfillTime: Ortszeit, keine Zukunft, keine Fantasiewerte", () => {
+  const now = new Date("2026-07-01T15:00:00").getTime();
+  assert.equal(diary.backfillTime("2026-07-01", "14:20", now), new Date("2026-07-01T14:20:00").getTime());
+  assert.throws(() => diary.backfillTime("2026-07-01", "16:00", now), /Zukunft/);
+  assert.throws(() => diary.backfillTime("", "14:20", now));
+  assert.throws(() => diary.backfillTime("2026-07-01", "25:99", now));
+});
